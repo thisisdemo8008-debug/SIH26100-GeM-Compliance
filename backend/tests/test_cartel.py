@@ -132,3 +132,22 @@ def test_cartel_api_endpoints():
     cert_data = cert_res.json()
     assert cert_data["valid"] is True
     assert cert_data["status"] == "OFFICIALLY_VERIFIED"
+
+    # 6. Global Cartel Network Graph (D3.js)
+    graph_res = client.get("/api/cartel/network-graph")
+    assert graph_res.status_code == 200
+    graph_data = graph_res.json()
+    assert "nodes" in graph_data
+    assert "links" in graph_data
+    assert "metrics" in graph_data
+    assert len(graph_data["nodes"]) >= 2
+    assert len(graph_data["links"]) >= 1
+    node_types = {n["type"] for n in graph_data["nodes"]}
+    assert "bidder" in node_types or "tender" in node_types
+    # Verify tender-specific filter
+    filtered_res = client.get(f"/api/cartel/network-graph?tender_id={tender_id}")
+    assert filtered_res.status_code == 200
+    filtered_data = filtered_res.json()
+    assert "nodes" in filtered_data
+    assert "links" in filtered_data
+

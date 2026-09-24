@@ -518,7 +518,7 @@ def append_audit(conn, actor: str, action: str, bid_id: str, details: Any, commi
     else:
         last_seq, prev_hash = 0, "GENESIS"
     seq = last_seq + 1
-    timestamp = time.time()
+    timestamp = round(time.time(), 3)
 
     try:
         details_payload = details if isinstance(details, (dict, list)) else json.loads(details)

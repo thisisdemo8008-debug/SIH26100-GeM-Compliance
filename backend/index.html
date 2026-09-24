@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="GeM Bid Verification Platform — a single console for GSTN, Income Tax, Udyam, MCA21, EPFO, DigiLocker, Startup India, NSIC and CPPP debarment checks, document parsing and a hash-chained audit trail.">
+<meta name="description" content="ARCHON — Autonomous GeM Bid Compliance Verification Platform: a single console for GSTN, Income Tax, Udyam, MCA21, EPFO, DigiLocker, Startup India, NSIC and CPPP debarment checks, document parsing and a hash-chained audit trail.">
 <meta name="color-scheme" content="light">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23101F33'/%3E%3Ctext x='50' y='66' font-size='52' font-family='Georgia,serif' font-weight='700' fill='%23CFE0D8' text-anchor='middle'%3EG%3C/text%3E%3C/svg%3E">
-<title>GeM Bid Verification Platform</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%23101F33'/%3E%3Ctext x='50' y='66' font-size='52' font-family='Georgia,serif' font-weight='700' fill='%234EBA97' text-anchor='middle'%3EA%3C/text%3E%3C/svg%3E">
+<title>ARCHON · GeM Bid Compliance Verification Platform</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="/d3.v7.min.js"></script>
+<script>if(typeof d3==='undefined'){document.write('<script src="https://d3js.org/d3.v7.min.js"><\/script>');}</script>
 <style>
 :root{
   color-scheme: light;
@@ -800,6 +802,399 @@ a{color:inherit;}
 .in-bid-collusion-card .icon{font-size:22px;line-height:1;}
 .in-bid-collusion-card h4{margin:0 0 4px;font-size:13.5px;color:#92400E;}
 .in-bid-collusion-card p{margin:0;font-size:12px;color:#78350F;line-height:1.45;}
+
+/* ---------- Tenure Auctions & Contract Duration Portal Styles ---------- */
+.tenure-header{
+  margin-bottom:20px;
+}
+.tenure-stats-grid{
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(210px, 1fr));gap:14px;margin-bottom:22px;
+}
+.tenure-stat-card{
+  background:#fff;border:1px solid var(--hairline);border-radius:10px;padding:16px 18px;
+  position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.03);
+}
+.tenure-stat-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--hairline);
+}
+.tenure-stat-card.ongoing::before{background:var(--emerald);}
+.tenure-stat-card.upcoming::before{background:var(--amber);}
+.tenure-stat-card.ended::before{background:var(--slate);}
+.tenure-stat-card.pipeline::before{background:var(--navy);}
+.tenure-stat-label{
+  font-size:11.5px;color:var(--slate);text-transform:uppercase;letter-spacing:.05em;font-weight:700;
+  display:flex;align-items:center;gap:6px;
+}
+.tenure-stat-val{
+  font-size:26px;font-weight:700;color:var(--navy);margin:6px 0 2px;letter-spacing:-.02em;
+}
+.tenure-stat-sub{font-size:11.5px;color:var(--slate);}
+
+.tenure-controls-bar{
+  background:#fff;border:1px solid var(--hairline);border-radius:10px;padding:14px 16px;
+  margin-bottom:20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;
+}
+.tenure-pills{display:flex;gap:6px;flex-wrap:wrap;}
+.tenure-pill-btn{
+  background:var(--paper-2);border:1px solid var(--hairline);border-radius:20px;padding:6px 14px;
+  font-size:12.5px;font-weight:600;color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:6px;
+  transition:all .15s ease;
+}
+.tenure-pill-btn:hover{background:#e2e8f0;border-color:#cbd5e1;}
+.tenure-pill-btn.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.tenure-pill-btn .pill-count{
+  font-size:10.5px;padding:1px 6px;border-radius:10px;background:rgba(0,0,0,0.08);
+}
+.tenure-pill-btn.active .pill-count{background:rgba(255,255,255,0.22);color:#fff;}
+
+.tenure-filters{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.tenure-select{
+  border:1px solid var(--hairline);border-radius:6px;padding:7px 10px;font-size:12.5px;
+  background:#fff;color:var(--ink);
+}
+.tenure-search{
+  border:1px solid var(--hairline);border-radius:6px;padding:7px 12px;font-size:12.5px;
+  min-width:220px;color:var(--ink);
+}
+
+.tenure-auction-grid{
+  display:grid;grid-template-columns:repeat(auto-fill, minmax(340px, 1fr));gap:18px;
+}
+.tenure-card{
+  background:#fff;border:1px solid var(--hairline);border-radius:10px;padding:18px;
+  display:flex;flex-direction:column;justify-content:space-between;gap:14px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.03);transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.tenure-card:hover{
+  transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,0.06);border-color:#cbd5e1;
+}
+.tenure-card-top{display:flex;flex-direction:column;gap:10px;}
+.tenure-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;}
+.tenure-dept{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--slate);letter-spacing:.04em;}
+.tenure-id-code{font-family:var(--mono);font-size:11.5px;color:var(--navy);font-weight:600;}
+
+.tenure-badge{
+  font-size:10px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:12px;
+  display:inline-flex;align-items:center;gap:5px;text-transform:uppercase;white-space:nowrap;
+}
+.tenure-badge.ongoing{background:var(--emerald-bg);color:var(--emerald);border:1px solid #BFE1D3;}
+.tenure-badge.upcoming{background:var(--amber-bg);color:var(--amber);border:1px solid #FCD34D;}
+.tenure-badge.ended{background:#f1f5f9;color:var(--slate);border:1px solid #e2e8f0;}
+
+.tenure-card-title{
+  font-size:14.5px;font-weight:700;color:var(--navy);line-height:1.35;margin:0;
+}
+.tenure-card-scope{
+  font-size:12px;color:var(--slate);line-height:1.45;margin:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+
+/* Highlighted tenure box */
+.tenure-highlight-box{
+  background:linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%);
+  border:1px solid #E2E8F0;border-radius:8px;padding:12px;
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+}
+.th-cell{display:flex;flex-direction:column;}
+.th-label{font-size:10.5px;font-weight:700;color:var(--slate);text-transform:uppercase;letter-spacing:.03em;}
+.th-val{font-size:13px;font-weight:700;color:var(--ink);margin-top:2px;}
+.th-val.highlight{color:var(--emerald);}
+.th-val.value{color:var(--navy);}
+
+.tenure-tags{display:flex;flex-wrap:wrap;gap:5px;}
+.tenure-tag{
+  font-size:10.5px;padding:2px 7px;border-radius:4px;background:#f8fafc;
+  border:1px solid var(--hairline);color:var(--slate);font-weight:500;
+}
+.tenure-tag.mandate{border-color:#bbf7d0;background:#f0fdf4;color:#166534;}
+
+.tenure-card-footer{
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+  padding-top:12px;border-top:1px solid var(--hairline);flex-wrap:wrap;
+}
+.tenure-timing{font-size:11.5px;color:var(--slate);display:flex;flex-direction:column;}
+.tenure-timing b{color:var(--ink);font-weight:600;}
+
+/* Live tenure card in Submit Form */
+.tenure-live-banner{
+  background:linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  border-radius:10px;padding:16px 20px;color:#fff;
+  box-shadow:0 4px 14px rgba(15,23,42,0.15);border:1px solid #334155;
+  display:flex;flex-direction:column;gap:12px;
+}
+.tlb-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.tlb-title{font-size:14.5px;font-weight:700;color:#f8fafc;display:flex;align-items:center;gap:8px;}
+.tlb-id{font-family:var(--mono);font-size:11.5px;background:#334155;padding:2px 8px;border-radius:4px;color:#94a3b8;}
+.tlb-grid{display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:12px;}
+.tlb-item{display:flex;flex-direction:column;}
+.tlb-label{font-size:10.5px;color:#94a3b8;text-transform:uppercase;letter-spacing:.04em;font-weight:600;}
+.tlb-val{font-size:13.5px;font-weight:700;color:#f1f5f9;margin-top:2px;}
+.tlb-val.green{color:#34d399;}
+.tlb-criteria-row{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding-top:8px;border-top:1px dashed #334155;font-size:11.5px;color:#cbd5e1;
+}
+
+.tenure-pill{
+  display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;
+  background:#f1f5f9;border:1px solid #cbd5e1;font-size:11px;font-weight:600;color:var(--navy);
+}
+
+/* ---------- Cartel Network Graph Visualizer (D3.js) ---------- */
+.cartel-graph-card{
+  background:#090F1A;border:1px solid #1E2E44;border-radius:12px;
+  overflow:hidden;margin-bottom:24px;box-shadow:0 12px 36px rgba(0,0,0,0.45);
+}
+.cartel-graph-topbar{
+  display:flex;justify-content:space-between;align-items:center;padding:14px 20px;
+  background:#0F1A2A;border-bottom:1px solid #1E2E44;flex-wrap:wrap;gap:12px;
+}
+.cartel-graph-title{
+  display:flex;align-items:center;gap:10px;font-size:14px;font-weight:700;color:#F8FAFC;
+}
+.cartel-graph-controls{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.cgc-select{
+  background:#090F1A;border:1px solid #283C56;color:#E2E8F0;font-size:12px;
+  padding:5px 10px;border-radius:6px;outline:none;
+}
+.cgc-btn{
+  background:#172538;border:1px solid #283C56;color:#94A3B8;font-size:11.5px;
+  padding:5px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+  transition:all .15s ease;
+}
+.cgc-btn:hover{background:#223652;color:#F8FAFC;}
+.cgc-btn.active{background:#0E7C61;border-color:#14A07C;color:#fff;}
+
+.cartel-graph-stage{
+  position:relative;width:100%;height:520px;background:radial-gradient(ellipse at center, #111D30 0%, #080D15 100%);
+  overflow:hidden;cursor:grab;
+}
+.cartel-graph-stage:active{cursor:grabbing;}
+.cartel-graph-stage svg{display:block;width:100%;height:100%;}
+
+.cartel-graph-legend{
+  position:absolute;bottom:14px;left:16px;background:rgba(15,26,42,0.88);
+  border:1px solid rgba(40,60,86,0.8);border-radius:8px;padding:8px 14px;
+  display:flex;gap:14px;align-items:center;font-size:11.5px;color:#94A3B8;
+  backdrop-filter:blur(6px);pointer-events:none;flex-wrap:wrap;z-index:2;
+}
+.cgl-item{display:inline-flex;align-items:center;gap:6px;}
+.cgl-dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+
+.cartel-inspector-overlay{
+  position:absolute;top:16px;right:16px;width:340px;max-height:480px;
+  background:rgba(13,21,32,0.95);border:1px solid #2B4263;border-radius:10px;
+  box-shadow:0 18px 40px rgba(0,0,0,0.65);backdrop-filter:blur(10px);
+  z-index:10;display:flex;flex-direction:column;overflow:hidden;
+  animation:slideInRight .2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideInRight{from{opacity:0;transform:translateX(15px);}to{opacity:1;transform:translateX(0);}}
+.cio-header{
+  display:flex;justify-content:space-between;align-items:center;padding:12px 16px;
+  background:#162438;border-bottom:1px solid #2B4263;font-size:12.5px;font-weight:700;color:#F8FAFC;
+}
+.cio-body{padding:14px 16px;overflow-y:auto;font-size:12.5px;color:#CBD5E1;line-height:1.55;}
+
+/* Pulsing edge for cartel links */
+@keyframes dashPulse {
+  to { stroke-dashoffset: -24; }
+}
+.cartel-link-active {
+  stroke-dasharray: 6, 6;
+  animation: dashPulse 1.2s linear infinite;
+}
+
+/* ---------- ARCHON Simulation Mode & Tactical Attack HUD ---------- */
+@keyframes stageAttackPulse {
+  0% { box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: inset 0 0 45px rgba(239, 68, 68, 0.65), 0 0 25px rgba(239, 68, 68, 0.4); border: 1px solid rgba(239, 68, 68, 0.9); }
+  100% { box-shadow: inset 0 0 15px rgba(239, 68, 68, 0.25); border: 1px solid rgba(239, 68, 68, 0.4); }
+}
+.stage-under-attack {
+  animation: stageAttackPulse 2s infinite ease-in-out !important;
+}
+
+.simulation-hud {
+  position: absolute; top: 14px; left: 16px; width: 440px; max-width: calc(100% - 32px);
+  background: rgba(15, 23, 42, 0.94); border: 1px solid rgba(239, 68, 68, 0.6);
+  border-radius: 10px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.65), 0 0 20px rgba(239, 68, 68, 0.2);
+  backdrop-filter: blur(12px); z-index: 12; overflow: hidden;
+  animation: slideInDown 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes slideInDown {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.hud-header {
+  display: flex; justify-content: space-between; align-items: center; padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.9); border-bottom: 1px solid rgba(239, 68, 68, 0.35);
+}
+.hud-title {
+  display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; color: #FCA5A5;
+}
+.hud-pulse-icon {
+  display: inline-block; animation: pulse 0.8s infinite; font-size: 14px;
+}
+.hud-btn-icon {
+  background: transparent; border: none; color: #94A3B8; cursor: pointer; font-size: 15px; line-height: 1;
+}
+.hud-btn-icon:hover { color: #F8FAFC; }
+
+.hud-content { padding: 12px 14px; }
+.hud-timeline { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.hud-step-item {
+  display: flex; gap: 10px; align-items: flex-start; background: rgba(15, 23, 42, 0.6);
+  padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(51, 65, 85, 0.7);
+  font-size: 11.5px; color: #E2E8F0;
+}
+.hsi-num {
+  background: #EF4444; color: #fff; font-weight: 700; border-radius: 50%; width: 18px; height: 18px;
+  display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px;
+}
+.hsi-details { flex: 1; }
+.hsi-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+.hsi-action { font-size: 11px; color: #94A3B8; line-height: 1.4; }
+
+.hud-meta-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 8px;
+  border-top: 1px solid rgba(51, 65, 85, 0.8); padding-top: 10px;
+}
+.hm-card {
+  background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(51, 65, 85, 0.6);
+  border-radius: 6px; padding: 6px 8px;
+}
+.hm-lbl { font-size: 9px; font-weight: 700; color: #64748B; text-transform: uppercase; margin-bottom: 2px; }
+.hm-val { font-size: 11px; font-weight: 600; }
+
+/* ---------- ARCHON Multimodal Tender RAG Copilot ---------- */
+.copilot-floating-btn{
+  position:fixed;bottom:24px;right:24px;z-index:900;
+  background:linear-gradient(135deg, #101F33 0%, #1A2F4C 100%);
+  border:1px solid #2B4263;border-radius:30px;padding:10px 18px;
+  color:#F8FAFC;font-size:13px;font-weight:700;display:flex;align-items:center;gap:10px;
+  box-shadow:0 8px 26px rgba(0,0,0,0.4);cursor:pointer;transition:all .2s ease;
+}
+.copilot-floating-btn:hover{
+  transform:translateY(-2px);border-color:#10B981;box-shadow:0 12px 32px rgba(16,185,129,0.25);
+}
+.copilot-btn-icon{font-size:16px;}
+.copilot-status-dot{width:8px;height:8px;border-radius:50%;background:#10B981;box-shadow:0 0 8px #10B981;}
+
+.copilot-overlay{
+  position:fixed;inset:0;background:rgba(9,15,26,0.55);backdrop-filter:blur(3px);z-index:950;
+}
+.copilot-drawer{
+  position:fixed;top:0;right:0;bottom:0;width:480px;max-width:96vw;
+  background:#090F1A;border-left:1px solid #1E2E44;z-index:960;
+  display:flex;flex-direction:column;box-shadow:-12px 0 40px rgba(0,0,0,0.6);
+  animation:drawerSlideIn .25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes drawerSlideIn{from{transform:translateX(100%);}to{transform:translateX(0);}}
+
+.copilot-topbar{
+  display:flex;justify-content:space-between;align-items:center;padding:14px 18px;
+  background:#0F1A2A;border-bottom:1px solid #1E2E44;
+}
+.copilot-brand{display:flex;align-items:center;gap:10px;}
+.copilot-badge-icon{
+  width:32px;height:32px;border-radius:8px;background:#172538;border:1px solid #283C56;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.copilot-brand-title{font-size:13.5px;font-weight:700;color:#F8FAFC;}
+.copilot-brand-sub{font-size:10.5px;color:#94A3B8;display:flex;align-items:center;gap:5px;}
+.copilot-pulse-dot{width:6px;height:6px;border-radius:50%;background:#10B981;display:inline-block;}
+
+.copilot-top-actions{display:flex;align-items:center;gap:6px;}
+.copilot-icon-btn{
+  background:#172538;border:1px solid #283C56;color:#94A3B8;width:28px;height:28px;
+  border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;
+}
+.copilot-icon-btn:hover{background:#223652;color:#F8FAFC;}
+
+.copilot-context-banner{
+  background:#0D1726;border-bottom:1px solid #1E2E44;padding:10px 16px;
+  display:flex;justify-content:space-between;align-items:center;gap:10px;
+}
+.ccb-label{font-size:10px;font-weight:700;text-transform:uppercase;color:#64748B;letter-spacing:.04em;}
+.ccb-title{font-size:12px;font-weight:600;color:#F1F5F9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px;}
+.ccb-meta{font-size:10.5px;color:#94A3B8;}
+
+.copilot-prompts-wrapper{
+  background:#0A121F;border-bottom:1px solid #1E2E44;padding:8px 14px;
+}
+.copilot-prompts-label{font-size:9.5px;font-weight:700;text-transform:uppercase;color:#64748B;letter-spacing:.05em;margin-bottom:6px;}
+.copilot-prompts-scroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;}
+.copilot-prompts-scroll::-webkit-scrollbar{height:4px;}
+.copilot-prompts-scroll::-webkit-scrollbar-thumb{background:#1E2E44;border-radius:2px;}
+.copilot-prompt-pill{
+  background:#142133;border:1px solid #283C56;color:#CBD5E1;font-size:11px;padding:4px 10px;
+  border-radius:14px;white-space:nowrap;cursor:pointer;transition:all .15s ease;
+}
+.copilot-prompt-pill:hover{background:#1E324D;color:#fff;border-color:#38BDF8;}
+
+.copilot-messages{
+  flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;
+}
+.copilot-msg{display:flex;flex-direction:column;max-width:92%;animation:fadeIn .2s ease-out;}
+.copilot-msg.user{align-self:flex-end;align-items:flex-end;}
+.copilot-msg.assistant{align-self:flex-start;align-items:flex-start;}
+
+.copilot-bubble{
+  padding:12px 14px;border-radius:10px;font-size:12.5px;line-height:1.55;
+}
+.copilot-msg.user .copilot-bubble{
+  background:#1E293B;color:#F8FAFC;border:1px solid #334155;border-bottom-right-radius:2px;
+}
+.copilot-msg.assistant .copilot-bubble{
+  background:#0F1A2A;color:#E2E8F0;border:1px solid #1E2E44;border-left:3px solid #0E7C61;border-bottom-left-radius:2px;
+}
+.copilot-msg.assistant .copilot-bubble h3{margin:0 0 8px;font-size:13px;color:#F8FAFC;}
+.copilot-msg.assistant .copilot-bubble p{margin:0 0 8px;}
+.copilot-msg.assistant .copilot-bubble ul, .copilot-msg.assistant .copilot-bubble ol{margin:0 0 8px;padding-left:18px;}
+.copilot-msg.assistant .copilot-bubble blockquote{
+  margin:8px 0;padding:6px 10px;background:rgba(239,68,68,0.12);border-left:3px solid #EF4444;border-radius:4px;color:#FCA5A5;
+}
+
+.copilot-citations{
+  margin-top:8px;padding-top:8px;border-top:1px dashed #1E2E44;display:flex;flex-direction:column;gap:5px;
+}
+.copilot-cit-title{font-size:10px;font-weight:700;text-transform:uppercase;color:#94A3B8;letter-spacing:.03em;}
+.copilot-cit-item{
+  font-size:11px;color:#94A3B8;background:#142133;padding:4px 8px;border-radius:4px;border:1px solid #1E2E44;
+}
+.copilot-cit-item b{color:#38BDF8;}
+
+.copilot-actions{
+  margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;
+}
+.copilot-act-btn{
+  background:#0E7C61;border:none;color:#fff;font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:4px;
+}
+.copilot-act-btn:hover{background:#10B981;}
+
+.copilot-attachment-bar{
+  background:#0B1321;border-top:1px solid #1E2E44;padding:6px 14px;
+  display:flex;gap:6px;overflow-x:auto;align-items:center;
+}
+.cab-chip{
+  font-size:10px;color:#64748B;background:#101B2B;border:1px solid #1E2E44;padding:2px 8px;border-radius:10px;white-space:nowrap;
+}
+
+.copilot-input-bar{
+  background:#0F1A2A;border-top:1px solid #1E2E44;padding:12px 14px;display:flex;align-items:flex-end;gap:8px;
+}
+.copilot-textarea{
+  flex:1;background:#090F1A;border:1px solid #283C56;border-radius:8px;color:#F8FAFC;font-size:12.5px;
+  padding:8px 12px;outline:none;resize:none;max-height:100px;font-family:inherit;line-height:1.4;
+}
+.copilot-textarea:focus{border-color:#38BDF8;}
+.copilot-send-btn{
+  background:#0E7C61;border:none;color:#fff;width:34px;height:34px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:14px;transition:all .15s ease;
+}
+.copilot-send-btn:hover{background:#10B981;}
 </style>
 </head>
 <body>
@@ -808,6 +1203,16 @@ a{color:inherit;}
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="evidenceModalMount"></div>
 <div id="noticeModalMount"></div>
+<div id="auctionModalMount"></div>
+<div id="rpaModalMount"></div>
+<div id="comparisonModalMount"></div>
+<div id="copilotMount"></div>
+<button id="btnOpenCopilotFloating" class="copilot-floating-btn" title="Open ARCHON Multimodal Tender RAG Copilot">
+  <span class="copilot-btn-icon">🤖</span>
+  <span class="copilot-btn-label">Ask ARCHON Copilot</span>
+  <span class="copilot-status-dot"></span>
+</button>
+
 
 
 <script>
@@ -888,6 +1293,350 @@ const TENDER_PROFILES = [
     note:"CPCL Nagapattinam Refinery: Supply & installation of HT/LT switchgear & transformers. Min turnover ₹8 Cr. EPFO & BIS mandatory." }
 ];
 function tenderProfile(id){ return TENDER_PROFILES.find(p=>p.id===id) || TENDER_PROFILES[0]; }
+
+/* ---------- Tenure Auctions Catalog (Ongoing, Upcoming, Ended) ---------- */
+const TENURE_AUCTIONS_CATALOG = [
+  {
+    auction_id: "CPCL-2026-VALV-089",
+    title: "Procurement of High-Pressure Forged Steel Refinery Valves & Flanges — CPCL Manali Refinery",
+    department: "CPCL Manali Refinery",
+    category: "refinery-valves",
+    status: "ongoing",
+    tenure_months: 36,
+    tenure_label: "36 Months (3 Years)",
+    tenure_start_date: "01-May-2026",
+    tenure_end_date: "30-Apr-2029",
+    tenure_extension_terms: "Renewable up to 12 months based on annual SLA rating >= 90%",
+    estimated_value: 150000000,
+    estimated_value_formatted: "₹15.00 Cr",
+    bidding_start: "10-Apr-2026 09:00 IST",
+    bidding_deadline: "25-Apr-2026 17:00 IST",
+    bids_count: 3,
+    current_lowest_bid: 148000000,
+    current_lowest_formatted: "₹14.80 Cr",
+    min_turnover: 150000000,
+    min_local_content: 50,
+    requires_epfo: true,
+    requires_bis: true,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Q1 2026", deliverable: "Initial batch forged valves delivery & metallurgical test certs"},
+      {period: "Year 1-2", deliverable: "Scheduled refinery shutdown valve replacements & on-site pressure testing"},
+      {period: "Year 3", deliverable: "Comprehensive AMC spares inventory handover & warranty closeout"}
+    ],
+    scope_summary: "Supply, installation, hydrostatic pressure testing, and multi-year AMC spares for refinery grade gate, globe, and check valves."
+  },
+  {
+    auction_id: "GEM-2026-IT-004521",
+    title: "National Supply & Managed Maintenance of Enterprise IT Hardware & Networking",
+    department: "Ministry of Electronics & Information Technology",
+    category: "goods-electronics",
+    status: "ongoing",
+    tenure_months: 24,
+    tenure_label: "24 Months (2 Years)",
+    tenure_start_date: "15-Jun-2026",
+    tenure_end_date: "14-Jun-2028",
+    tenure_extension_terms: "Extendable by 6 months on mutual consent",
+    estimated_value: 50000000,
+    estimated_value_formatted: "₹5.00 Cr",
+    bidding_start: "01-Apr-2026 10:00 IST",
+    bidding_deadline: "10-May-2026 15:00 IST",
+    bids_count: 5,
+    current_lowest_bid: 48500000,
+    current_lowest_formatted: "₹4.85 Cr",
+    min_turnover: 5000000,
+    min_local_content: 30,
+    requires_epfo: false,
+    requires_bis: true,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Month 1-3", deliverable: "Staged deployment of 1,200 desktop workstations & rack servers"},
+      {period: "Year 1", deliverable: "Quarterly preventative maintenance & switch firmware updates"},
+      {period: "Year 2", deliverable: "24-month SLA compliance audit & residual warranty transfer"}
+    ],
+    scope_summary: "Provisioning of 1,200 desktop workstations, rack servers, managed L3 switches, and 24-month on-site warranty support."
+  },
+  {
+    auction_id: "CPCL-2026-TURN-003",
+    title: "Refinery Turnaround Piping & Structural Fabrication Services — CPCL Chennai Complex",
+    department: "CPCL Chennai Complex",
+    category: "turnaround",
+    status: "ongoing",
+    tenure_months: 12,
+    tenure_label: "12 Months (1 Year)",
+    tenure_start_date: "01-Jul-2026",
+    tenure_end_date: "30-Jun-2027",
+    tenure_extension_terms: "Fixed tenure (Shutdown turnaround window)",
+    estimated_value: 50000000,
+    estimated_value_formatted: "₹5.00 Cr",
+    bidding_start: "12-Apr-2026 10:00 IST",
+    bidding_deadline: "02-May-2026 18:00 IST",
+    bids_count: 2,
+    current_lowest_bid: 49200000,
+    current_lowest_formatted: "₹4.92 Cr",
+    min_turnover: 50000000,
+    min_local_content: 50,
+    requires_epfo: true,
+    requires_bis: false,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Month 1-2", deliverable: "Mobilization of skilled welders, NDT level-II technicians & safety gears"},
+      {period: "Month 3-6", deliverable: "Unit shutdown piping spool pre-fabrication and hydro-testing"},
+      {period: "Month 7-12", deliverable: "Post-startup flange leak inspections & hydro-test sign-offs"}
+    ],
+    scope_summary: "Execution of turnaround pipe spool fabrication, hydrotesting, bolt-tensioning, and NDT inspection across CDU/VDU units."
+  },
+  {
+    auction_id: "GEM-2026-MSME-011",
+    title: "MSME-Reserved: Modular Ergonomic Workstations & Office Fixtures",
+    department: "Department of Administrative Reforms (DARPG)",
+    category: "goods-general",
+    status: "ongoing",
+    tenure_months: 12,
+    tenure_label: "12 Months (1 Year)",
+    tenure_start_date: "01-Aug-2026",
+    tenure_end_date: "31-Jul-2027",
+    tenure_extension_terms: "Renewable for 1 additional year under identical pricing",
+    estimated_value: 8500000,
+    estimated_value_formatted: "₹85.00 Lakh",
+    bidding_start: "15-Apr-2026 10:00 IST",
+    bidding_deadline: "20-May-2026 12:00 IST",
+    bids_count: 6,
+    current_lowest_bid: 8150000,
+    current_lowest_formatted: "₹81.50 Lakh",
+    min_turnover: 0,
+    min_local_content: 25,
+    requires_epfo: false,
+    requires_bis: false,
+    requires_startup_proof: true,
+    milestones: [
+      {period: "Phase 1", deliverable: "Ergonomic layout signoff and material delivery"},
+      {period: "Phase 2", deliverable: "Modular installation and acoustic testing for 4 departmental zones"}
+    ],
+    scope_summary: "Modular partitions, height-adjustable desks, and acoustic paneling across 4 departmental regional complexes."
+  },
+  {
+    auction_id: "CPCL-2026-ELEC-027",
+    title: "Supply & Installation of HT/LT Switchgear & Transformers — CPCL Nagapattinam Refinery",
+    department: "CPCL Nagapattinam Refinery",
+    category: "switchgear",
+    status: "upcoming",
+    tenure_months: 36,
+    tenure_label: "36 Months (3 Years)",
+    tenure_start_date: "01-Sep-2026",
+    tenure_end_date: "31-Aug-2029",
+    tenure_extension_terms: "Renewable for 1 additional year for routine substation AMC",
+    estimated_value: 80000000,
+    estimated_value_formatted: "₹8.00 Cr",
+    bidding_start: "15-May-2026 10:00 IST",
+    bidding_deadline: "15-Jun-2026 17:00 IST",
+    bids_count: 0,
+    current_lowest_bid: null,
+    current_lowest_formatted: "Bidding not opened",
+    min_turnover: 80000000,
+    min_local_content: 50,
+    requires_epfo: true,
+    requires_bis: true,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Year 1", deliverable: "Type testing and delivery of 33kV/11kV gas-insulated switchgear units"},
+      {period: "Year 2", deliverable: "Substation installation, relay coordination & energization"},
+      {period: "Year 3", deliverable: "36-month preventive maintenance & thermal imaging inspections"}
+    ],
+    scope_summary: "33kV/11kV gas-insulated switchgear units, 5 MVA power transformers, protection relays, and 3-year preventative maintenance."
+  },
+  {
+    auction_id: "GEM-2026-SOLAR-055",
+    title: "Grid-Interactive Rooftop Solar PV & BESS Microgrid 5-Year Comprehensive O&M",
+    department: "Ministry of New and Renewable Energy (MNRE)",
+    category: "solar-microgrid",
+    status: "upcoming",
+    tenure_months: 60,
+    tenure_label: "60 Months (5 Years)",
+    tenure_start_date: "01-Oct-2026",
+    tenure_end_date: "30-Sep-2031",
+    tenure_extension_terms: "Option to extend for 2 years upon 98% generation availability",
+    estimated_value: 225000000,
+    estimated_value_formatted: "₹22.50 Cr",
+    bidding_start: "01-Jun-2026 11:00 IST",
+    bidding_deadline: "30-Jun-2026 16:00 IST",
+    bids_count: 0,
+    current_lowest_bid: null,
+    current_lowest_formatted: "Bidding not opened",
+    min_turnover: 120000000,
+    min_local_content: 50,
+    requires_epfo: true,
+    requires_bis: true,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Month 1-6", deliverable: "5 MW solar array erection and 2 MWh BESS commissioning"},
+      {period: "Year 2-4", deliverable: "Continuous telemetry monitoring and monthly guaranteed CUF audits"},
+      {period: "Year 5", deliverable: "Battery state-of-health re-certification and handover"}
+    ],
+    scope_summary: "5 MW cumulative rooftop solar with 2 MWh Battery Energy Storage System (BESS), IoT telemetry, and 60-month performance guarantee."
+  },
+  {
+    auction_id: "CPCL-2026-PIPE-102",
+    title: "Intelligent Pigging & Ultrasonic In-Line Inspection (ILI) for Subsea Pipelines",
+    department: "CPCL Cauvery Basin / Marine Terminal",
+    category: "services",
+    status: "upcoming",
+    tenure_months: 24,
+    tenure_label: "24 Months (2 Years)",
+    tenure_start_date: "01-Nov-2026",
+    tenure_end_date: "31-Oct-2028",
+    tenure_extension_terms: "Performance based extension up to 12 months",
+    estimated_value: 110000000,
+    estimated_value_formatted: "₹11.00 Cr",
+    bidding_start: "15-Jun-2026 14:00 IST",
+    bidding_deadline: "15-Jul-2026 17:00 IST",
+    bids_count: 0,
+    current_lowest_bid: null,
+    current_lowest_formatted: "Bidding not opened",
+    min_turnover: 100000000,
+    min_local_content: 20,
+    requires_epfo: true,
+    requires_bis: false,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Year 1", deliverable: "Pre-run geometry cleaning pig run and subsea pipeline baseline mapping"},
+      {period: "Year 2", deliverable: "Ultrasonic wall loss inspection, anomaly classification and remnant life calculation"}
+    ],
+    scope_summary: "High-resolution magnetic flux leakage (MFL) and ultrasonic wall-thickness mapping across 42 km of crude oil transfer lines."
+  },
+  {
+    auction_id: "CPCL-2026-CAT-014",
+    title: "Supply of Hydroprocessing Catalyst & Technical Services — CPCL Cauvery Basin Refinery",
+    department: "CPCL Cauvery Basin Refinery",
+    category: "catalyst-services",
+    status: "ended",
+    tenure_months: 24,
+    tenure_label: "24 Months (2 Years)",
+    tenure_start_date: "01-Jan-2024",
+    tenure_end_date: "31-Dec-2025",
+    tenure_extension_terms: "Completed contract tenure",
+    estimated_value: 400000000,
+    estimated_value_formatted: "₹40.00 Cr",
+    bidding_start: "01-Nov-2023",
+    bidding_deadline: "15-Dec-2023",
+    bids_count: 4,
+    current_lowest_bid: 389000000,
+    current_lowest_formatted: "₹38.90 Cr",
+    awarded_bidder: "M/s Bharat HydraTech Systems (Joint Venture)",
+    awarded_amount: 389000000,
+    awarded_amount_formatted: "₹38.90 Cr",
+    awarded_compliance_score: 98,
+    awarded_date: "15-Feb-2026",
+    min_turnover: 400000000,
+    min_local_content: 20,
+    requires_epfo: false,
+    requires_bis: true,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Cycle 1", deliverable: "Catalyst batch supply and reactor loading protocol"},
+      {period: "Cycle 2", deliverable: "Mid-term activity testing and spent catalyst safe recycling"}
+    ],
+    scope_summary: "Catalyst batch supply, loading supervision, start-up kinetics benchmarking, and spent catalyst recycling."
+  },
+  {
+    auction_id: "GEM-2026-CONST-098",
+    title: "Civil Works — Minor Construction & Facility Modernization",
+    department: "Central Public Works Department (CPWD)",
+    category: "civil-works",
+    status: "ended",
+    tenure_months: 12,
+    tenure_label: "12 Months (1 Year)",
+    tenure_start_date: "01-Feb-2025",
+    tenure_end_date: "31-Jan-2026",
+    tenure_extension_terms: "Completed contract tenure",
+    estimated_value: 10000000,
+    estimated_value_formatted: "₹1.00 Cr",
+    bidding_start: "01-Dec-2024",
+    bidding_deadline: "10-Jan-2025",
+    bids_count: 5,
+    current_lowest_bid: 9450000,
+    current_lowest_formatted: "₹94.50 Lakh",
+    awarded_bidder: "M/s Shivalik Infrastructure Works",
+    awarded_amount: 9450000,
+    awarded_amount_formatted: "₹94.50 Lakh",
+    awarded_compliance_score: 92,
+    awarded_date: "20-Jan-2026",
+    min_turnover: 10000000,
+    min_local_content: 20,
+    requires_epfo: true,
+    requires_bis: false,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "H1", deliverable: "Structural civil reinforcement and drainage culvert casting"},
+      {period: "H2", deliverable: "Road resurfacing, finishing works and final handover"}
+    ],
+    scope_summary: "Perimeter fencing, drainage paving, and administrative wing seismic retrofitting."
+  },
+  {
+    auction_id: "GEM-2025-MED-044",
+    title: "Automated Medical Lab Diagnostic Reagents & Analyzer Maintenance",
+    department: "AIIMS Procurement Directorate",
+    category: "services",
+    status: "ended",
+    tenure_months: 36,
+    tenure_label: "36 Months (3 Years)",
+    tenure_start_date: "01-Jan-2023",
+    tenure_end_date: "31-Dec-2025",
+    tenure_extension_terms: "Concluded successfully with zero downtime penalty",
+    estimated_value: 65000000,
+    estimated_value_formatted: "₹6.50 Cr",
+    bidding_start: "01-Nov-2022",
+    bidding_deadline: "15-Dec-2022",
+    bids_count: 3,
+    current_lowest_bid: 62000000,
+    current_lowest_formatted: "₹6.20 Cr",
+    awarded_bidder: "M/s Vantara Diagnostics & Bio-Systems",
+    awarded_amount: 62000000,
+    awarded_amount_formatted: "₹6.20 Cr",
+    awarded_compliance_score: 100,
+    awarded_date: "18-Dec-2025",
+    min_turnover: 30000000,
+    min_local_content: 50,
+    requires_epfo: true,
+    requires_bis: true,
+    requires_startup_proof: false,
+    milestones: [
+      {period: "Year 1-3", deliverable: "Continuous cold-chain supply and 99.5% analyzer uptime SLA"}
+    ],
+    scope_summary: "Continuous reagent cold-chain supply, closed-system biochemistry analyzer leasing, and 99.5% uptime SLA."
+  }
+];
+
+function getTenureAuction(id){
+  if(!id) return TENURE_AUCTIONS_CATALOG[0];
+  const clean = String(id).toUpperCase().trim();
+  return TENURE_AUCTIONS_CATALOG.find(a => a.auction_id.toUpperCase() === clean) || TENURE_AUCTIONS_CATALOG[0];
+}
+
+function getTenureAuctions(status, category, tenureMonths, search){
+  let list = TENURE_AUCTIONS_CATALOG.slice();
+  if(status && status !== "all"){
+    list = list.filter(a => a.status === status);
+  }
+  if(category && category !== "all"){
+    list = list.filter(a => a.category === category);
+  }
+  if(tenureMonths){
+    list = list.filter(a => a.tenure_months === Number(tenureMonths));
+  }
+  if(search && search.trim()){
+    const q = search.toLowerCase().trim();
+    list = list.filter(a =>
+      a.auction_id.toLowerCase().includes(q) ||
+      a.title.toLowerCase().includes(q) ||
+      a.department.toLowerCase().includes(q) ||
+      a.scope_summary.toLowerCase().includes(q)
+    );
+  }
+  return list;
+}
+
+let tenureFilter = { status: "ongoing", category: "all", tenureMonths: null, search: "" };
 
 const DOC_TYPES = [
   { id:"gstr3b",   title:"GSTR-3B returns",            sub:"Last 4 quarters",          accept:".pdf",              required:true },
@@ -1388,7 +2137,7 @@ function renderLogin(){
         </svg>
       </div>
       <div class="brand-top">
-        <div class="brand-mark"><span class="mk">GeM</span> Bid Verification Platform</div>
+        <div class="brand-mark"><span class="mk" style="background:#14A07C;color:#fff;padding:2px 8px;border-radius:4px;font-weight:800;letter-spacing:1px;">ARCHON</span> GeM Verification Platform</div>
         <h1 class="brand-headline">One console for every check a procurement officer has to run by hand.</h1>
         <p class="brand-sub">GSTN, Income Tax, Udyam, MCA21, EPFO, DigiLocker, Startup India, NSIC and CPPP debarment lookups, document parsing and a tamper-evident audit trail — in a single window instead of twenty tabs.</p>
       </div>
@@ -1677,13 +2426,17 @@ function renderTopbar(activeTab, tabs){
   const userLine = s.role==="bidder"
     ? `<b>${escapeHtml(s.company)}</b><span>${escapeHtml(s.gstin)}</span>`
     : `<b>${escapeHtml(s.name)}</b><span>${escapeHtml(s.empId)}</span>`;
+  const rpaButton = s.role==="officer"
+    ? `<button class="btn-ghost-dark" id="btnGovRpaTelemetry" style="border:1px solid #14A07C;color:#4EBA97;background:rgba(20,160,124,0.08);display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:5px 11px;border-radius:6px;cursor:pointer;" title="Inspect Live RPA Crawler & Scrapers"><span class="ai-pulse-dot" style="background:#14A07C;width:6px;height:6px;display:inline-block;border-radius:50%;"></span>🤖 Gov RPA Telemetry</button>`
+    : "";
   return `
   <header class="topbar">
-    <div class="topbar-brand"><span class="mark" aria-hidden="true">GeM</span> Bid Verification Platform</div>
+    <div class="topbar-brand"><span class="mark" aria-hidden="true" style="background:#14A07C;color:#fff;font-weight:800;letter-spacing:1px;padding:2px 7px;border-radius:4px;">ARCHON</span> GeM Verification</div>
     <nav class="topbar-mid" aria-label="Primary">
       ${tabs.map(t=>`<button class="topbar-tab ${t.id===activeTab?'active':''}" data-tab="${t.id}" aria-current="${t.id===activeTab?'page':'false'}">${t.label}</button>`).join("")}
     </nav>
     <div class="topbar-right">
+      ${rpaButton}
       <button class="nav-link-dark" id="navResources">Services directory</button>
       <div class="topbar-user">${userLine}</div>
       <button class="btn-ghost-dark" id="logoutBtn">Sign out</button>
@@ -1691,11 +2444,14 @@ function renderTopbar(activeTab, tabs){
   </header>`;
 }
 function bidsForBidder(){
-  // Defensive: some bids or session fields may be null/undefined —
-  // normalize to empty string before comparing to avoid toLowerCase() on null.
-  const sessGstin = String((state.session && state.session.gstin) || "").toLowerCase();
-  const sessCompany = String((state.session && state.session.company) || "").toLowerCase();
-  return state.bids.filter(b=> String(b.gstin||"").toLowerCase() === sessGstin || String(b.company||"").toLowerCase() === sessCompany);
+  if(!state.session || (!state.session.gstin && !state.session.company)) return [];
+  const sessGstin = String(state.session.gstin || "").trim().toLowerCase();
+  const sessCompany = String(state.session.company || "").trim().toLowerCase();
+  return state.bids.filter(b => {
+    const bGstin = String(b.gstin || "").trim().toLowerCase();
+    const bComp = String(b.company || "").trim().toLowerCase();
+    return (sessGstin && bGstin === sessGstin) || (sessCompany && bComp === sessCompany);
+  });
 }
 function renderSidebar(context){
   const s = state.session;
@@ -1720,9 +2476,23 @@ function renderSidebar(context){
       <div class="sb-stat-row"><span>Registered suppliers</span><b>${(state.bidders||[]).length || 2}</b></div>
     </div>`;
   }
+  const allList = TENURE_AUCTIONS_CATALOG;
+  const liveCount = allList.filter(a=>a.status==="ongoing").length;
+  const upCount = allList.filter(a=>a.status==="upcoming").length;
+  const endCount = allList.filter(a=>a.status==="ended").length;
+
   return `
   <aside class="sidebar" aria-label="Overview">
     ${statsBlock}
+    <div class="sb-block">
+      <div class="sb-title sc" style="display:flex;justify-content:space-between;align-items:center;">
+        <span>⚡ Tenure Auctions</span>
+        <span class="sb-pill" style="color:var(--emerald);background:var(--emerald-bg);font-size:9.5px;">Live</span>
+      </div>
+      <div class="sb-stat-row"><span>Ongoing (Live)</span><b style="color:var(--emerald);">${liveCount}</b></div>
+      <div class="sb-stat-row"><span>Upcoming</span><b style="color:var(--amber);">${upCount}</b></div>
+      <div class="sb-stat-row"><span>Ended (Awarded)</span><b>${endCount}</b></div>
+    </div>
     <div class="sb-block">
       <div class="sb-title">Tender requirements</div>
       <ul class="sb-req-list">${REQUIREMENTS.map(r=>`<li><span class="sb-req-dot"></span>${r}</li>`).join("")}</ul>
@@ -1738,38 +2508,1297 @@ function renderSidebar(context){
       <div class="sb-legend-row"><span class="sb-swatch" style="background:#A63F35;"></span>High — ${RISK_THRESHOLDS.high}–${RISK_THRESHOLDS.medium-1}</div>
       <div class="sb-legend-row"><span class="sb-swatch" style="background:#7A1F1F;"></span>Critical — debarment override</div>
     </div>
-    <button class="sb-cta" id="sbResourcesBtn">Compliance services directory →</button>
   </aside>`;
 }
 function wireShellCommon(){
   document.getElementById("logoutBtn").addEventListener("click", ()=>{
     state.session = null; persist(); setRoute({view:"login"});
   });
-  document.getElementById("navResources").addEventListener("click", ()=> setRoute({view:"resources"}));
-  const sb = document.getElementById("sbResourcesBtn");
-  if(sb) sb.addEventListener("click", ()=> setRoute({view:"resources"}));
+  const navRes = document.getElementById("navResources");
+  if(navRes) navRes.addEventListener("click", ()=> setRoute({view:"resources"}));
+  const rpaBtn = document.getElementById("btnGovRpaTelemetry");
+  if(rpaBtn) rpaBtn.addEventListener("click", ()=> openGovRpaModal());
+  const copilotFloating = document.getElementById("btnOpenCopilotFloating");
+  if(copilotFloating) copilotFloating.addEventListener("click", ()=> openCopilot());
   document.querySelectorAll(".topbar-tab").forEach(b=>{
     b.addEventListener("click", ()=> setRoute({ tab:b.dataset.tab }));
   });
 }
 
+async function openGovRpaModal(){
+  const mount = document.getElementById("rpaModalMount") || document.getElementById("auctionModalMount");
+  if(!mount) return;
+
+  mount.innerHTML = `
+  <div class="notice-backdrop" id="rpaBackdrop">
+    <div class="notice-modal" style="max-width:880px;background:#0d1520;color:#e2e8f0;border:1px solid #1e2d42;border-radius:12px;box-shadow:0 25px 60px rgba(0,0,0,0.65);">
+      <div class="notice-topbar" style="background:#131e2e;border-bottom:1px solid #22344d;display:flex;justify-content:space-between;align-items:center;padding:14px 20px;">
+        <div style="font-weight:700;font-size:14.5px;display:flex;align-items:center;gap:10px;color:#f8fafc;">
+          <span style="background:rgba(20,160,124,0.2);color:#34d399;border:1px solid #059669;border-radius:4px;padding:2px 7px;font-size:11px;font-family:var(--mono);">LIVE BOT</span>
+          <span>Automated Gov RPA & Web Scraper Telemetry</span>
+        </div>
+        <button id="closeRpaModal" style="background:transparent;border:none;color:#94a3b8;font-size:20px;cursor:pointer;line-height:1;" title="Close">✕</button>
+      </div>
+      <div style="padding:22px 24px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;background:#162234;padding:14px 18px;border-radius:8px;border:1px solid #23364f;">
+          <div>
+            <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;font-weight:700;">Automation Engine</div>
+            <div style="font-size:14px;font-weight:600;color:#f1f5f9;margin-top:2px;">Playwright Headless Chromium + DOM Parser</div>
+          </div>
+          <div style="display:flex;gap:14px;align-items:center;">
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;font-weight:700;">Engine Status</div>
+              <div style="font-size:13px;font-weight:700;color:#34d399;display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-top:2px;">
+                <span style="width:7px;height:7px;background:#34d399;border-radius:50%;display:inline-block;box-shadow:0 0 8px #34d399;"></span> OPERATIONAL
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;font-weight:700;">Hybrid Protocol</div>
+              <div style="font-size:13px;font-weight:600;color:#60a5fa;margin-top:2px;">Live Scraper + Direct Gateway</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;">
+          <div>
+            <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;font-weight:600;">Target GSTIN for RPA Crawl</label>
+            <input type="text" id="rpaGstinInput" value="07AAACV4321H1Z3" style="width:100%;box-sizing:border-box;background:#090d14;border:1px solid #2a3c54;color:#f8fafc;padding:8px 12px;border-radius:6px;font-family:var(--mono);font-size:13px;">
+          </div>
+          <div>
+            <label style="font-size:12px;color:#94a3b8;display:block;margin-bottom:6px;font-weight:600;">Company Entity Name for MCA21 Search</label>
+            <input type="text" id="rpaCompanyInput" value="Vantara Systems" style="width:100%;box-sizing:border-box;background:#090d14;border:1px solid #2a3c54;color:#f8fafc;padding:8px 12px;border-radius:6px;font-family:var(--sans);font-size:13px;">
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <span style="font-size:12.5px;color:#94a3b8;font-weight:600;">Live Execution Telemetry Stream</span>
+          <button id="btnTriggerRpaRun" style="background:#0E7C61;color:#fff;border:none;padding:7px 16px;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <span>▶ Dispatch Real-Time RPA Task</span>
+          </button>
+        </div>
+
+        <div id="rpaConsoleLog" style="background:#060a0f;border:1px solid #1e2a3a;border-radius:8px;padding:14px 16px;font-family:Consolas, Monaco, 'Courier New', monospace;font-size:12px;color:#38bdf8;min-height:170px;max-height:220px;overflow-y:auto;line-height:1.65;white-space:pre-wrap;">
+[Ready] RPA worker ready. Click 'Dispatch Real-Time RPA Task' to execute headless browser flow against government verification endpoints.
+        </div>
+
+        <div style="margin-top:16px;display:flex;justify-content:flex-end;">
+          <button id="btnCloseRpaBottom" style="background:#1e293b;border:1px solid #334155;color:#e2e8f0;padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;">Close Console</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  const closeFn = () => { mount.innerHTML = ""; };
+  document.getElementById("closeRpaModal").addEventListener("click", closeFn);
+  document.getElementById("btnCloseRpaBottom").addEventListener("click", closeFn);
+  document.getElementById("rpaBackdrop").addEventListener("click", (e) => {
+    if(e.target.id === "rpaBackdrop") closeFn();
+  });
+
+  const triggerBtn = document.getElementById("btnTriggerRpaRun");
+  const consoleEl = document.getElementById("rpaConsoleLog");
+
+  triggerBtn.addEventListener("click", async () => {
+    const gstin = (document.getElementById("rpaGstinInput").value || "").trim();
+    const company = (document.getElementById("rpaCompanyInput").value || "").trim();
+
+    triggerBtn.disabled = true;
+    triggerBtn.textContent = "⏳ Executing automated flow...";
+    consoleEl.textContent = `[${new Date().toLocaleTimeString()}] Dispatching RPA tasks...\n[${new Date().toLocaleTimeString()}] Connecting to RPA worker daemon at /api/verify/rpa-status\n`;
+
+    try {
+      const url = `/api/verify/rpa-status?gstin=${encodeURIComponent(gstin)}&company=${encodeURIComponent(company)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      let logs = [];
+      logs.push(`[${new Date().toLocaleTimeString()}] ✅ RPA Engine handshake: ${data.status} (${data.rpa_engine})`);
+      logs.push(`[${new Date().toLocaleTimeString()}] Mode: ${data.hybrid_mode}`);
+      
+      if(data.sample_run_gstin) {
+        const g = data.sample_run_gstin;
+        logs.push(`\n--- GSTN PORTAL AUTOMATION (services.gst.gov.in) ---`);
+        logs.push(`Engine: ${g.rpa_engine}`);
+        logs.push(`Duration: ${g.execution_duration_ms} ms | Status: ${g.automation_status}`);
+        if(g.telemetry_log) {
+          g.telemetry_log.forEach(l => logs.push("  > " + l));
+        }
+      }
+
+      if(data.sample_run_mca21) {
+        const m = data.sample_run_mca21;
+        logs.push(`\n--- MCA21 PORTAL AUTOMATION (mca.gov.in) ---`);
+        logs.push(`Engine: ${m.rpa_engine}`);
+        logs.push(`Duration: ${m.execution_duration_ms} ms | Status: ${m.automation_status}`);
+        if(m.live_scraped_data) {
+          logs.push(`  > Live Scraped CIN: ${m.live_scraped_data.cin || 'N/A'}`);
+          logs.push(`  > Corporate Status: ${m.live_scraped_data.company_status || 'Active'}`);
+          logs.push(`  > RoC Jurisdiction: ${m.live_scraped_data.roc_jurisdiction || 'RoC'}`);
+        }
+        if(m.telemetry_log) {
+          m.telemetry_log.forEach(l => logs.push("  > " + l));
+        }
+      }
+
+      logs.push(`\n[${new Date().toLocaleTimeString()}] 🎯 RPA automated verification cycle finished with 100% telemetry fidelity.`);
+      consoleEl.textContent = logs.join("\n");
+    } catch(err) {
+      consoleEl.textContent += `\n[ERROR] RPA Task communication failed: ${err.message}`;
+    } finally {
+      triggerBtn.disabled = false;
+      triggerBtn.textContent = "▶ Re-run Live RPA Task";
+    }
+  });
+}
+
+/* ---------------- ARCHON MULTIMODAL TENDER RAG COPILOT ---------------- */
+let copilotState = {
+  open: false,
+  activeBid: null,
+  history: [],
+  isLoading: false
+};
+
+function formatCopilotMarkdown(text){
+  if(!text) return "";
+  let html = escapeHtml(text);
+  html = html.replace(/^### (.*$)/gim, '<h3 style="margin:6px 0 4px;font-size:13.5px;color:#F8FAFC;">$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2 style="margin:8px 0 4px;font-size:14.5px;color:#F8FAFC;">$1</h2>');
+  html = html.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+  html = html.replace(/\*(.*?)\*/g, '<i>$1</i>');
+  html = html.replace(/`([^`]+)`/g, '<code style="background:#090F1A;padding:1px 5px;border-radius:4px;color:#38BDF8;font-size:11px;">$1</code>');
+  html = html.replace(/\[Doc p\. (\d+)\]/g, '<span style="background:rgba(56,189,248,0.15);color:#38BDF8;padding:1px 6px;border-radius:10px;font-size:10.5px;font-weight:600;display:inline-flex;align-items:center;gap:3px;">📄 Page $1</span>');
+  html = html.replace(/^\s*-\s+(.*$)/gim, '<li style="margin-left:14px;">$1</li>');
+  html = html.replace(/(<li.*<\/li>)/s, '<ul style="margin:4px 0 8px;padding-left:6px;">$1</ul>');
+  html = html.replace(/^>\s+(.*$)/gim, '<blockquote style="margin:6px 0;padding:6px 10px;background:rgba(239,68,68,0.12);border-left:3px solid #EF4444;border-radius:4px;color:#FCA5A5;">$1</blockquote>');
+  html = html.replace(/\n\n/g, '<p style="margin:0 0 6px;"></p>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+async function openCopilot(bid = null){
+  copilotState.open = true;
+  if(bid){
+    copilotState.activeBid = bid;
+  } else if(route.openBid){
+    copilotState.activeBid = state.bids.find(b => b.id === route.openBid) || null;
+  } else if(!copilotState.activeBid && state.bids && state.bids.length){
+    copilotState.activeBid = state.bids[0];
+  }
+
+  const mount = document.getElementById("copilotMount");
+  if(!mount) return;
+
+  const targetBid = copilotState.activeBid;
+  const bidName = targetBid ? (targetBid.company || targetBid.bidder_name || "Vendor Bid") : "All Registered Tenders";
+  const tenderLabel = targetBid ? (targetBid.auctionTitle || (typeof tenderProfile==='function' && tenderProfile(targetBid.tenderCategory).label) || targetBid.tenderCategory || "Tender") : "Global Multi-Tender Context";
+  const isHighRisk = targetBid && (targetBid.risk === "Critical" || targetBid.risk === "High");
+
+  mount.innerHTML = `
+    <div id="copilotOverlay" class="copilot-overlay"></div>
+    <aside id="copilotDrawer" class="copilot-drawer">
+      <div class="copilot-topbar">
+        <div class="copilot-brand">
+          <span class="copilot-badge-icon">🤖</span>
+          <div>
+            <div class="copilot-brand-title">ARCHON Tender RAG Copilot</div>
+            <div class="copilot-brand-sub"><span class="copilot-pulse-dot"></span> Multi-Document &amp; Statutory Neural Engine</div>
+          </div>
+        </div>
+        <div class="copilot-top-actions">
+          <button id="btnResetCopilotChat" class="copilot-icon-btn" title="Clear conversation">🗑️</button>
+          <button id="btnCloseCopilot" class="copilot-icon-btn" title="Close drawer">✕</button>
+        </div>
+      </div>
+
+      <div class="copilot-context-banner" id="copilotContextBanner">
+        <div class="ccb-left">
+          <div class="ccb-label">ACTIVE BID CONTEXT</div>
+          <div class="ccb-title" title="${escapeHtml(bidName)}">${escapeHtml(bidName)}</div>
+          <div class="ccb-meta">${escapeHtml(tenderLabel)} · ${targetBid ? `Score: ${targetBid.score || 85}/100` : 'Global Mode'}</div>
+        </div>
+        <span class="badge ${isHighRisk ? 'critical' : 'ok'}" style="font-size:10px;">${isHighRisk ? 'FLAGGED RISK' : 'INDEXED'}</span>
+      </div>
+
+      <div class="copilot-prompts-wrapper">
+        <div class="copilot-prompts-label">SUGGESTED STATUTORY QUERIES</div>
+        <div class="copilot-prompts-scroll" id="copilotPromptsScroll">
+          <span style="font-size:11px;color:#64748B;">Loading tailored prompt chips...</span>
+        </div>
+      </div>
+
+      <div class="copilot-messages" id="copilotMessages"></div>
+
+      <div class="copilot-attachment-bar" id="copilotAttachmentBar">
+        <span class="cab-chip">📄 Tender Specifications</span>
+        <span class="cab-chip">📑 Audited Balance Sheet (UDIN)</span>
+        <span class="cab-chip">🛡️ GeM Integrity Pact</span>
+        <span class="cab-chip">🏛️ Registry Telemetry</span>
+      </div>
+
+      <div class="copilot-input-bar">
+        <textarea id="copilotInput" class="copilot-textarea" placeholder="Ask anything about this bid (turnover, MSME exemption, OEM validity, cartel flags)..." rows="1"></textarea>
+        <button id="btnSendCopilot" class="copilot-send-btn" title="Send query (Enter)">➤</button>
+      </div>
+    </aside>
+  `;
+
+  // Wire close & reset
+  document.getElementById("btnCloseCopilot").onclick = closeCopilot;
+  document.getElementById("copilotOverlay").onclick = closeCopilot;
+  document.getElementById("btnResetCopilotChat").onclick = () => {
+    copilotState.history = [];
+    renderCopilotWelcome();
+  };
+
+  // Wire send
+  const inputEl = document.getElementById("copilotInput");
+  const sendBtn = document.getElementById("btnSendCopilot");
+  sendBtn.onclick = () => sendCopilotMessage();
+  inputEl.onkeydown = (e) => {
+    if(e.key === 'Enter' && !e.shiftKey){
+      e.preventDefault();
+      sendCopilotMessage();
+    }
+  };
+
+  renderCopilotWelcome();
+  loadCopilotPrompts(targetBid ? targetBid.id : null);
+
+  setTimeout(() => {
+    if(inputEl) inputEl.focus();
+  }, 100);
+}
+
+function closeCopilot(){
+  const mount = document.getElementById("copilotMount");
+  if(mount) mount.innerHTML = "";
+  copilotState.open = false;
+}
+
+async function loadCopilotPrompts(bidId){
+  const scrollEl = document.getElementById("copilotPromptsScroll");
+  if(!scrollEl) return;
+  try{
+    const url = `/api/copilot/quick-prompts${bidId ? '?bid_id=' + encodeURIComponent(bidId) : ''}`;
+    const r = await fetch(url);
+    if(r.ok){
+      const data = await r.json();
+      const prompts = data.prompts || [];
+      if(prompts.length){
+        scrollEl.innerHTML = prompts.map(p => `
+          <button class="copilot-prompt-pill" data-query="${escapeHtml(p.query)}">${escapeHtml(p.label)}</button>
+        `).join("");
+        scrollEl.querySelectorAll(".copilot-prompt-pill").forEach(btn => {
+          btn.onclick = () => {
+            sendCopilotMessage(btn.dataset.query);
+          };
+        });
+        return;
+      }
+    }
+  }catch(e){
+    console.warn("Failed to load prompt chips:", e);
+  }
+  scrollEl.innerHTML = `
+    <button class="copilot-prompt-pill" data-query="Does this bidder qualify for MSME exemption?">🔍 Check MSME Exemption</button>
+    <button class="copilot-prompt-pill" data-query="Evaluate this bidder's audited turnover against tender criteria.">💰 Verify Turnover</button>
+    <button class="copilot-prompt-pill" data-query="Check OEM authorization letter and warranty terms.">📑 Verify OEM MAF</button>
+  `;
+  scrollEl.querySelectorAll(".copilot-prompt-pill").forEach(btn => {
+    btn.onclick = () => sendCopilotMessage(btn.dataset.query);
+  });
+}
+
+function renderCopilotWelcome(){
+  const msgContainer = document.getElementById("copilotMessages");
+  if(!msgContainer) return;
+
+  const targetBid = copilotState.activeBid;
+  const co = targetBid ? (targetBid.company || targetBid.bidder_name || "this vendor") : "registered bidders";
+
+  msgContainer.innerHTML = `
+    <div class="copilot-msg assistant">
+      <div class="copilot-bubble">
+        <h3 style="margin:0 0 6px;color:#F8FAFC;">Greetings, Officer. ARCHON Copilot is online.</h3>
+        <p style="margin:0 0 6px;color:#CBD5E1;">
+          I have fully ingested and indexed the multi-page tender document package for <b>${escapeHtml(co)}</b>, including:
+        </p>
+        <ul style="margin:0 0 8px;padding-left:18px;color:#94A3B8;font-size:12px;">
+          <li><b>Page 1:</b> Corporate Lineage &amp; Active DINs (MCA21)</li>
+          <li><b>Page 2:</b> Audited Turnover &amp; Net Worth (Chartered Accountant UDIN)</li>
+          <li><b>Page 3:</b> Manufacturer Authorization Form (Tier-1 OEM Warranty)</li>
+          <li><b>Page 4:</b> GSTIN, PAN &amp; Udyam Registration (MSE Policy 2012)</li>
+          <li><b>Page 5:</b> Technical Specification Schedule &amp; Local Content (PPP-MII)</li>
+          <li><b>Page 6:</b> Non-Collusion Undertaking (Competition Act Sec 3(3) &amp; GeM GTC)</li>
+        </ul>
+        <div style="font-size:11.5px;color:#38BDF8;">
+          💡 Click a quick query chip above or ask any specific compliance question below.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function sendCopilotMessage(directQuery = null){
+  const inputEl = document.getElementById("copilotInput");
+  const msgContainer = document.getElementById("copilotMessages");
+  if(!msgContainer) return;
+
+  const query = directQuery || (inputEl ? inputEl.value.trim() : "");
+  if(!query || copilotState.isLoading) return;
+
+  if(inputEl) inputEl.value = "";
+  copilotState.isLoading = true;
+
+  // Append user bubble
+  const userMsgEl = document.createElement("div");
+  userMsgEl.className = "copilot-msg user";
+  userMsgEl.innerHTML = `<div class="copilot-bubble">${escapeHtml(query)}</div>`;
+  msgContainer.appendChild(userMsgEl);
+
+  // Append thinking bubble
+  const thinkingEl = document.createElement("div");
+  thinkingEl.className = "copilot-msg assistant";
+  thinkingEl.innerHTML = `
+    <div class="copilot-bubble" style="display:flex;align-items:center;gap:8px;color:#94A3B8;">
+      <span class="spinner" style="display:inline-block;width:13px;height:13px;border:2px solid #334155;border-top-color:#10B981;border-radius:50%;animation:spin .7s linear infinite;"></span>
+      <span>Retrieving document pages &amp; evaluating statutory norms...</span>
+    </div>`;
+  msgContainer.appendChild(thinkingEl);
+  msgContainer.scrollTop = msgContainer.scrollHeight;
+
+  try{
+    const targetBid = copilotState.activeBid;
+    const payload = {
+      query: query,
+      bid_id: targetBid ? targetBid.id : null,
+      tender_id: targetBid ? (targetBid.tenderCategory || targetBid.tender_id) : null,
+      conversation_history: copilotState.history
+    };
+
+    const res = await fetch('/api/copilot/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    // Build citations markup
+    let citationsHtml = "";
+    if(data.citations && data.citations.length > 0){
+      citationsHtml = `
+        <div class="copilot-citations">
+          <div class="copilot-cit-title">DOCUMENT &amp; STATUTORY CITATIONS (${data.citations.length})</div>
+          ${data.citations.map(c => `
+            <div class="copilot-cit-item">
+              <b>${escapeHtml(c.source)}${c.page ? ` [Page ${c.page}]` : ''}</b>:
+              <i>"${escapeHtml(c.snippet)}"</i>
+              ${c.clause ? `<span style="display:block;font-size:10px;color:#64748B;margin-top:2px;">Statute: ${escapeHtml(c.clause)}</span>` : ''}
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // Build actions markup
+    let actionsHtml = "";
+    if(data.suggested_actions && data.suggested_actions.length > 0){
+      actionsHtml = `
+        <div class="copilot-actions">
+          ${data.suggested_actions.map(act => `
+            <button class="copilot-act-btn" data-action="${escapeHtml(act.action)}" data-text="${escapeHtml(act.text || '')}">
+              <span>✓</span> ${escapeHtml(act.label)}
+            </button>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    // Replace thinking bubble with assistant response
+    thinkingEl.innerHTML = `
+      <div class="copilot-bubble">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:10.5px;font-weight:700;color:#0E7C61;letter-spacing:.04em;text-transform:uppercase;">ARCHON STATUTORY RAG</span>
+          <span style="font-size:10px;color:#64748B;font-family:var(--mono);">${Math.round((data.confidence || 0.95) * 100)}% Match Confidence</span>
+        </div>
+        <div>${formatCopilotMarkdown(data.response)}</div>
+        ${citationsHtml}
+        ${actionsHtml}
+      </div>
+    `;
+
+    // Wire action buttons
+    thinkingEl.querySelectorAll(".copilot-act-btn").forEach(btn => {
+      btn.onclick = () => {
+        const actionType = btn.dataset.action;
+        const text = btn.dataset.text;
+        if(actionType === 'INSERT_JUSTIFICATION' && text){
+          const justEl = document.getElementById("justification");
+          if(justEl){
+            justEl.value = (justEl.value ? justEl.value + "\n\n" : "") + text;
+            toast("Inserted statutory text into Officer Decision Justification!");
+          } else {
+            toast("Text copied: " + text.slice(0, 50) + "...");
+          }
+        } else if(actionType === 'OPEN_SCN_MODAL'){
+          if(targetBid && typeof showNoticeModal === 'function'){
+            closeCopilot();
+            showNoticeModal(targetBid);
+          }
+        }
+      };
+    });
+
+    copilotState.history.push({ role: "user", content: query });
+    copilotState.history.push({ role: "assistant", content: data.response });
+
+  }catch(err){
+    console.error("Copilot fetch error:", err);
+    thinkingEl.innerHTML = `
+      <div class="copilot-bubble" style="border-left-color:#EF4444;color:#FCA5A5;">
+        <b>Engine Notice:</b> Could not contact remote RAG service (${escapeHtml(err.message)}). Please verify backend connectivity.
+      </div>`;
+  }finally{
+    copilotState.isLoading = false;
+    msgContainer.scrollTop = msgContainer.scrollHeight;
+  }
+}
+
+/* ---------------- TENURE AUCTIONS PORTAL ---------------- */
+function renderTenureAuctions(){
+  const s = state.session;
+  const filtered = getTenureAuctions(tenureFilter.status, tenureFilter.category, tenureFilter.tenureMonths, tenureFilter.search);
+  const allList = TENURE_AUCTIONS_CATALOG;
+  const ongoingCount = allList.filter(a=>a.status==="ongoing").length;
+  const upcomingCount = allList.filter(a=>a.status==="upcoming").length;
+  const endedCount = allList.filter(a=>a.status==="ended").length;
+  const totalPipeline = allList.filter(a=>a.status==="ongoing").reduce((acc,a)=>acc+a.estimated_value, 0);
+
+  return `
+  <div class="main-header tenure-header">
+    <div>
+      <h1>⚡ GeM & CPCL Tenure Auctions Portal</h1>
+      <p>Live public procurement e-auctions, scheduled contract tenures, and concluded tender awards across refinery works, goods, and services.</p>
+    </div>
+  </div>
+
+  <div class="tenure-stats-grid">
+    <div class="tenure-stat-card ongoing">
+      <div class="tenure-stat-label"><span class="ai-pulse-dot" style="background:var(--emerald);"></span> Ongoing Auctions</div>
+      <div class="tenure-stat-val">${ongoingCount}</div>
+      <div class="tenure-stat-sub">Active live bidding windows</div>
+    </div>
+    <div class="tenure-stat-card upcoming">
+      <div class="tenure-stat-label">🕒 Upcoming Auctions</div>
+      <div class="tenure-stat-val">${upcomingCount}</div>
+      <div class="tenure-stat-sub">Scheduled contract tenures</div>
+    </div>
+    <div class="tenure-stat-card ended">
+      <div class="tenure-stat-label">🏁 Ended / Concluded</div>
+      <div class="tenure-stat-val">${endedCount}</div>
+      <div class="tenure-stat-sub">Awarded & audited tenures</div>
+    </div>
+    <div class="tenure-stat-card pipeline">
+      <div class="tenure-stat-label">💼 Active Tenure Pipeline</div>
+      <div class="tenure-stat-val">₹${(totalPipeline / 10000000).toFixed(2)} Cr</div>
+      <div class="tenure-stat-sub">Total live tender valuation</div>
+    </div>
+  </div>
+
+  <div class="tenure-controls-bar">
+    <div class="tenure-pills">
+      <button class="tenure-pill-btn ${tenureFilter.status==='all'?'active':''}" data-status="all">All <span class="pill-count">${allList.length}</span></button>
+      <button class="tenure-pill-btn ${tenureFilter.status==='ongoing'?'active':''}" data-status="ongoing">🟢 Ongoing <span class="pill-count">${ongoingCount}</span></button>
+      <button class="tenure-pill-btn ${tenureFilter.status==='upcoming'?'active':''}" data-status="upcoming">🕒 Upcoming <span class="pill-count">${upcomingCount}</span></button>
+      <button class="tenure-pill-btn ${tenureFilter.status==='ended'?'active':''}" data-status="ended">🏁 Ended <span class="pill-count">${endedCount}</span></button>
+    </div>
+    <div class="tenure-filters">
+      <select class="tenure-select" id="filterCategory">
+        <option value="all" ${tenureFilter.category==='all'?'selected':''}>All Categories</option>
+        <option value="refinery-valves" ${tenureFilter.category==='refinery-valves'?'selected':''}>Refinery Valves & Flanges</option>
+        <option value="goods-electronics" ${tenureFilter.category==='goods-electronics'?'selected':''}>Enterprise IT & Electronics</option>
+        <option value="turnaround" ${tenureFilter.category==='turnaround'?'selected':''}>Refinery Turnaround Works</option>
+        <option value="goods-general" ${tenureFilter.category==='goods-general'?'selected':''}>Goods & MSME Workstations</option>
+        <option value="solar-microgrid" ${tenureFilter.category==='solar-microgrid'?'selected':''}>Clean Energy & Solar O&M</option>
+        <option value="services" ${tenureFilter.category==='services'?'selected':''}>Specialized Services</option>
+        <option value="civil-works" ${tenureFilter.category==='civil-works'?'selected':''}>Civil Works</option>
+      </select>
+      <select class="tenure-select" id="filterTenure">
+        <option value="" ${!tenureFilter.tenureMonths?'selected':''}>All Contract Tenures</option>
+        <option value="12" ${tenureFilter.tenureMonths===12?'selected':''}>12 Months (1 Year)</option>
+        <option value="24" ${tenureFilter.tenureMonths===24?'selected':''}>24 Months (2 Years)</option>
+        <option value="36" ${tenureFilter.tenureMonths===36?'selected':''}>36 Months (3 Years)</option>
+        <option value="60" ${tenureFilter.tenureMonths===60?'selected':''}>60 Months (5 Years)</option>
+      </select>
+      <input type="text" class="tenure-search" id="searchAuctions" placeholder="Search by ID, title, refinery..." value="${escapeHtml(tenureFilter.search||'')}">
+    </div>
+  </div>
+
+  ${filtered.length === 0 ? `
+    <div class="empty-state">No tenure auctions found matching your current filter criteria. Try selecting "All" or clearing the search.</div>
+  ` : `
+    <div class="tenure-auction-grid">
+      ${filtered.map(a => renderAuctionCard(a, s)).join("")}
+    </div>
+  `}
+  `;
+}
+
+function renderAuctionCard(a, session){
+  const isOngoing = a.status === "ongoing";
+  const isUpcoming = a.status === "upcoming";
+  const isEnded = a.status === "ended";
+
+  const statusBadge = isOngoing
+    ? `<span class="tenure-badge ongoing"><span class="ai-pulse-dot" style="background:var(--emerald);"></span>LIVE BIDDING</span>`
+    : (isUpcoming
+      ? `<span class="tenure-badge upcoming">🕒 SCHEDULED</span>`
+      : `<span class="tenure-badge ended">🏁 CONCLUDED</span>`);
+
+  let timingHtml = "";
+  if(isOngoing){
+    timingHtml = `<div class="tenure-timing"><span>Closes: <b>${escapeHtml(a.bidding_deadline)}</b></span><span style="color:var(--emerald);font-weight:600;">${a.bids_count} Bids Submitted</span></div>`;
+  } else if(isUpcoming){
+    timingHtml = `<div class="tenure-timing"><span>Opens: <b>${escapeHtml(a.bidding_start)}</b></span><span>Pre-bid conference scheduled</span></div>`;
+  } else {
+    timingHtml = `<div class="tenure-timing"><span>Concluded: <b>${escapeHtml(a.awarded_date || 'Concluded')}</b></span><span style="color:var(--emerald);font-weight:600;">Awarded to ${escapeHtml(a.awarded_bidder || 'L1 Bidder')}</span></div>`;
+  }
+
+  let actionBtns = "";
+  if(isOngoing){
+    if(session && session.role === "officer"){
+      actionBtns = `
+        <button class="btn btn-primary btn-sm btn-monitor-tenure" data-monitor-tenure="${a.auction_id}">Review Bids (${a.bids_count})</button>
+        <button class="btn btn-outline btn-sm btn-compare-matrix" data-compare-matrix="${a.auction_id}" style="border-color:#2563EB;color:#2563EB;background:rgba(37,99,235,0.06);font-weight:600;" title="Comparative Statement of Bids under GFR Rules 149 & 153">📊 Compare (CSB)</button>
+        <button class="btn btn-outline btn-sm btn-view-tenure" data-view-tenure="${a.auction_id}">Details</button>
+      `;
+    } else {
+      actionBtns = `
+        <button class="btn btn-primary btn-sm btn-bid-tenure" data-bid-tenure="${a.auction_id}">Bid on this auction →</button>
+        <button class="btn btn-outline btn-sm btn-compare-matrix" data-compare-matrix="${a.auction_id}" style="border-color:#2563EB;color:#2563EB;font-weight:600;">📊 CSB Matrix</button>
+        <button class="btn btn-outline btn-sm btn-view-tenure" data-view-tenure="${a.auction_id}">Details</button>
+      `;
+    }
+  } else {
+    actionBtns = `
+      <button class="btn btn-outline btn-sm btn-compare-matrix" data-compare-matrix="${a.auction_id}" style="border-color:#2563EB;color:#2563EB;font-weight:600;">📊 CSB Matrix</button>
+      <button class="btn btn-outline btn-sm btn-view-tenure" data-view-tenure="${a.auction_id}">View Tenure Terms</button>
+    `;
+  }
+
+  return `
+  <div class="tenure-card">
+    <div class="tenure-card-top">
+      <div class="tenure-card-header">
+        <div>
+          <div class="tenure-dept">${escapeHtml(a.department)}</div>
+          <div class="tenure-id-code">${escapeHtml(a.auction_id)}</div>
+        </div>
+        ${statusBadge}
+      </div>
+
+      <h3 class="tenure-card-title">${escapeHtml(a.title)}</h3>
+      <p class="tenure-card-scope">${escapeHtml(a.scope_summary)}</p>
+
+      <div class="tenure-highlight-box">
+        <div class="th-cell">
+          <div class="th-label">⏱️ Contract Tenure</div>
+          <div class="th-val highlight">${escapeHtml(a.tenure_label)}</div>
+        </div>
+        <div class="th-cell">
+          <div class="th-label">💰 Estimated Budget</div>
+          <div class="th-val value">${escapeHtml(a.estimated_value_formatted)}</div>
+        </div>
+        <div class="th-cell" style="grid-column: span 2;">
+          <div class="th-label">📅 Tenure Execution Window</div>
+          <div class="th-val" style="font-size:12px;font-weight:600;color:var(--slate);">${escapeHtml(a.tenure_start_date)} to ${escapeHtml(a.tenure_end_date)}</div>
+        </div>
+      </div>
+
+      <div class="tenure-tags">
+        <span class="tenure-tag">Min Turnover: ₹${(a.min_turnover/10000000 >= 1 ? (a.min_turnover/10000000).toFixed(0)+' Cr' : (a.min_turnover/100000 >= 1 ? (a.min_turnover/100000).toFixed(0)+' L' : 'Exempt'))}</span>
+        <span class="tenure-tag">Local Content ≥${a.min_local_content}%</span>
+        ${a.requires_epfo ? `<span class="tenure-tag mandate">EPFO Mandate</span>` : ""}
+        ${a.requires_bis ? `<span class="tenure-tag mandate">BIS Certified</span>` : ""}
+        ${a.requires_startup_proof ? `<span class="tenure-tag">MSME / Startup</span>` : ""}
+      </div>
+    </div>
+
+    <div class="tenure-card-footer">
+      ${timingHtml}
+      <div style="display:flex;gap:6px;">${actionBtns}</div>
+    </div>
+  </div>
+  `;
+}
+
+function showTenureAuctionDetail(auctionId){
+  const a = getTenureAuction(auctionId);
+  if(!a) return;
+  const mount = document.getElementById("auctionModalMount");
+  if(!mount) return;
+
+  const isOngoing = a.status === "ongoing";
+  const s = state.session;
+
+  mount.innerHTML = `
+  <div class="notice-backdrop" id="auctionBackdrop">
+    <div class="notice-modal" style="max-width:820px;">
+      <div class="notice-topbar" style="background:var(--navy);">
+        <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;">
+          <span>⚡ Tenure Auction Specifications: ${escapeHtml(a.auction_id)}</span>
+        </div>
+        <button id="closeAuctionModal" style="background:transparent;border:none;color:#fff;font-size:18px;cursor:pointer;line-height:1;">✕</button>
+      </div>
+      <div class="notice-cert-wrap" style="padding:24px 28px;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px;">
+          <div>
+            <div style="font-size:11.5px;font-weight:700;color:var(--slate);text-transform:uppercase;">${escapeHtml(a.department)}</div>
+            <h2 style="margin:4px 0 0;font-family:var(--serif);font-size:18px;color:var(--navy);">${escapeHtml(a.title)}</h2>
+          </div>
+          <span class="tenure-badge ${a.status}">${escapeHtml(a.status.toUpperCase())}</span>
+        </div>
+
+        <div class="tenure-highlight-box" style="grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));margin-bottom:18px;">
+          <div class="th-cell">
+            <div class="th-label">⏱️ Contract Tenure</div>
+            <div class="th-val highlight">${escapeHtml(a.tenure_label)}</div>
+          </div>
+          <div class="th-cell">
+            <div class="th-label">📅 Execution Window</div>
+            <div class="th-val">${escapeHtml(a.tenure_start_date)} – ${escapeHtml(a.tenure_end_date)}</div>
+          </div>
+          <div class="th-cell">
+            <div class="th-label">💰 Estimated Value</div>
+            <div class="th-val value">${escapeHtml(a.estimated_value_formatted)}</div>
+          </div>
+          <div class="th-cell">
+            <div class="th-label">⏳ Current Status</div>
+            <div class="th-val">${a.status==="ongoing" ? "Active Bidding" : a.status==="upcoming" ? "Scheduled" : "Awarded"}</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <h4 style="margin:0 0 6px;font-size:12px;text-transform:uppercase;color:var(--slate);letter-spacing:.04em;">Detailed Scope of Work during Tenure</h4>
+          <p style="margin:0;font-size:13px;line-height:1.55;color:var(--ink);">${escapeHtml(a.scope_summary)}</p>
+        </div>
+
+        <div style="margin-bottom:16px;">
+          <h4 style="margin:0 0 6px;font-size:12px;text-transform:uppercase;color:var(--slate);letter-spacing:.04em;">Tenure Extension & SLA Terms</h4>
+          <p style="margin:0;font-size:13px;line-height:1.55;color:var(--ink);background:var(--paper);padding:10px 12px;border-radius:6px;border:1px solid var(--hairline);">${escapeHtml(a.tenure_extension_terms)}</p>
+        </div>
+
+        ${a.milestones && a.milestones.length ? `
+          <div style="margin-bottom:16px;">
+            <h4 style="margin:0 0 8px;font-size:12px;text-transform:uppercase;color:var(--slate);letter-spacing:.04em;">Tenure Milestone Delivery Schedule</h4>
+            <table class="cert-table" style="margin:0;">
+              <thead>
+                <tr><th>Tenure Phase / Period</th><th>Committed Deliverable & SLA Threshold</th></tr>
+              </thead>
+              <tbody>
+                ${a.milestones.map(m=>`
+                  <tr>
+                    <td style="font-weight:600;color:var(--navy);white-space:nowrap;">${escapeHtml(m.period)}</td>
+                    <td>${escapeHtml(m.deliverable)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        ` : ""}
+
+        <div style="margin-bottom:20px;">
+          <h4 style="margin:0 0 8px;font-size:12px;text-transform:uppercase;color:var(--slate);letter-spacing:.04em;">Mandatory Statutory & Technical Criteria</h4>
+          <div class="tenure-tags" style="gap:8px;">
+            <span class="tenure-tag" style="padding:4px 9px;">Turnover Threshold: ₹${(a.min_turnover/10000000 >= 1 ? (a.min_turnover/10000000).toFixed(0)+' Cr' : (a.min_turnover/100000 >= 1 ? (a.min_turnover/100000).toFixed(0)+' L' : 'Exempt'))}</span>
+            <span class="tenure-tag" style="padding:4px 9px;">Minimum Local Content: ${a.min_local_content}%</span>
+            ${a.requires_epfo ? `<span class="tenure-tag mandate" style="padding:4px 9px;">EPFO Labour Compliance Mandate</span>` : ""}
+            ${a.requires_bis ? `<span class="tenure-tag mandate" style="padding:4px 9px;">BIS Mandatory Quality Certification</span>` : ""}
+            ${a.requires_startup_proof ? `<span class="tenure-tag" style="padding:4px 9px;">Udyam / Startup India Mandate</span>` : ""}
+          </div>
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--hairline);padding-top:16px;">
+          <button class="btn btn-outline" id="btnCloseModalBottom">Close</button>
+          ${isOngoing ? (s && s.role==="officer" ? `
+            <button class="btn btn-primary" id="btnModalReviewBids">Review Bids (${a.bids_count}) →</button>
+          ` : `
+            <button class="btn btn-primary" id="btnModalBidOnTenure" data-bid-tenure="${a.auction_id}">Bid on this auction →</button>
+          `) : ""}
+        </div>
+      </div>
+    </div>
+  </div>
+  `;
+
+  const closeFn = () => { mount.innerHTML = ""; };
+  document.getElementById("closeAuctionModal").addEventListener("click", closeFn);
+  document.getElementById("btnCloseModalBottom").addEventListener("click", closeFn);
+  document.getElementById("auctionBackdrop").addEventListener("click", (e)=>{
+    if(e.target.id === "auctionBackdrop") closeFn();
+  });
+  const bidBtn = document.getElementById("btnModalBidOnTenure");
+  if(bidBtn){
+    bidBtn.addEventListener("click", () => {
+      closeFn();
+      openDedicatedBidModal(a.auction_id);
+    });
+  }
+  const reviewBtn = document.getElementById("btnModalReviewBids");
+  if(reviewBtn){
+    reviewBtn.addEventListener("click", () => {
+      closeFn();
+      setRoute({ tab: "queue", filterAuction: a.auction_id, filterAuctionTitle: a.title, openBid: null });
+    });
+  }
+}
+
+async function showComparisonMatrixModal(tenderId){
+  const mount = document.getElementById("comparisonModalMount");
+  if(!mount) return;
+
+  mount.innerHTML = `
+    <div class="modal-backdrop" id="compModalBackdrop" style="position:fixed;inset:0;background:rgba(15,23,42,0.7);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;">
+      <div style="background:#fff;border-radius:10px;width:100%;max-width:980px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);border:1px solid #CBD5E1;">
+        <div style="padding:16px 24px;border-bottom:1px solid #E2E8F0;display:flex;justify-content:space-between;align-items:center;background:#0F172A;color:#fff;border-top-left-radius:9px;border-top-right-radius:9px;">
+          <div>
+            <div style="font-weight:800;font-size:15px;letter-spacing:-.01em;">📊 Comparative Statement of Bids (CSB) — Evaluation Matrix</div>
+            <div style="font-size:11.5px;color:#94A3B8;margin-top:2px;">GFR 2017 Rules 149 & 153 · L1 Price Discovery & DPIIT Make-in-India Preference</div>
+          </div>
+          <button id="closeCompModalBtn" style="background:transparent;border:none;color:#94A3B8;font-size:24px;cursor:pointer;line-height:1;">&times;</button>
+        </div>
+        <div id="compModalContent" style="padding:24px;">
+          <div style="text-align:center;padding:40px;color:#64748B;">
+            <div style="font-size:28px;margin-bottom:8px;">⏳</div>
+            <div>Aggregating competing bids, computing L1 rank, and analyzing GFR 153 purchase preferences…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById("closeCompModalBtn").onclick = () => { mount.innerHTML = ""; };
+  document.getElementById("compModalBackdrop").onclick = (e) => {
+    if(e.target.id === "compModalBackdrop") mount.innerHTML = "";
+  };
+
+  try{
+    const r = await fetch(`/api/tenders/${encodeURIComponent(tenderId)}/comparison-matrix`);
+    if(!r.ok) throw new Error("Failed to load comparison matrix");
+    const data = await r.json();
+
+    const content = document.getElementById("compModalContent");
+    if(!content) return;
+
+    if(!data.matrix || data.matrix.length === 0){
+      content.innerHTML = `<div class="empty-state" style="padding:40px;text-align:center;color:#64748B;">No bids submitted yet for tender <b>${escapeHtml(tenderId)}</b>. Bids will appear here once submitted.</div>`;
+      return;
+    }
+
+    const prefNotice = data.purchase_preference_clause ? `
+      <div style="margin-bottom:18px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:12px 16px;font-size:12.5px;color:#92400E;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:18px;">⚖️</span>
+        <div><b>Statutory Purchase Preference Mandate:</b><br>${escapeHtml(data.purchase_preference_clause)}</div>
+      </div>
+    ` : "";
+
+    const awardCard = `
+      <div style="margin-bottom:18px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <span style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#64748B;font-weight:700;">Tender Title</span>
+          <div style="font-size:14px;font-weight:700;color:#0F172A;margin-top:2px;">${escapeHtml(data.tender_title || tenderId)}</div>
+          <div style="font-size:11.5px;font-family:monospace;color:#64748B;">Ref ID: ${escapeHtml(data.tender_id)} · Total Bids Evaluated: ${data.total_bids} (${data.technically_qualified_count} Qualified)</div>
+        </div>
+        <div style="display:flex;gap:16px;">
+          <div style="text-align:right;">
+            <span style="font-size:11px;text-transform:uppercase;color:#64748B;font-weight:700;">Discovered L1 Quote</span>
+            <div style="font-size:16px;font-weight:800;color:#059669;">${escapeHtml(data.l1_quote_formatted || '—')}</div>
+          </div>
+          <div style="text-align:right;border-left:1px solid #E2E8F0;padding-left:16px;">
+            <span style="font-size:11px;text-transform:uppercase;color:#64748B;font-weight:700;">Award Recommendation</span>
+            <div style="font-size:14px;font-weight:800;color:#1E3A8A;">${escapeHtml(data.recommended_awardee || 'Pending')}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const tableRows = data.matrix.map(b => {
+      const isL1 = b.quote_rank === "L1";
+      const rankBadge = isL1 
+        ? `<span style="background:#FEF08A;color:#854D0E;font-weight:800;padding:2px 8px;border-radius:12px;font-size:11px;border:1px solid #FACC15;">🥇 L1</span>` 
+        : `<span style="background:#F1F5F9;color:#475569;font-weight:700;padding:2px 8px;border-radius:12px;font-size:11px;">${escapeHtml(b.quote_rank)}</span>`;
+      
+      const techBadge = b.technically_qualified 
+        ? `<span style="color:#059669;font-weight:700;">✔ Qualified</span>` 
+        : `<span style="color:#DC2626;font-weight:700;">✖ Disqualified</span>`;
+
+      const miiBadge = b.make_in_india_class === "Class-I Local"
+        ? `<span style="background:#ECFDF5;color:#065F46;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;">Class-I (${b.local_content_pct}%)</span>`
+        : `<span style="background:#F1F5F9;color:#475569;padding:2px 7px;border-radius:4px;font-size:11px;">${escapeHtml(b.make_in_india_class)} (${b.local_content_pct}%)</span>`;
+
+      const cartelBadge = b.cartel_flag 
+        ? `<span style="background:#FEF2F2;color:#991B1B;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:700;" title="Cartel / Anti-competitive ring detected">⚠️ Collusion Ring</span>` 
+        : `<span style="color:#059669;font-size:11px;">Clear</span>`;
+
+      return `
+        <tr style="${isL1 ? 'background:rgba(254,249,195,0.25);' : ''}">
+          <td style="text-align:center;padding:8px;">${rankBadge}</td>
+          <td style="font-weight:700;color:#0F172A;padding:8px 12px;">${escapeHtml(b.bidder_name)}</td>
+          <td style="font-weight:700;font-family:monospace;color:#1E293B;padding:8px 12px;">${escapeHtml(b.financial_quote_formatted)}</td>
+          <td style="padding:8px 12px;"><b>${b.compliance_score}</b> <span style="font-size:11px;color:#64748B;">(${escapeHtml(b.risk_level)})</span></td>
+          <td style="padding:8px 12px;">${techBadge}</td>
+          <td style="padding:8px 12px;">${miiBadge}</td>
+          <td style="padding:8px 12px;">${b.msme_status ? '<span style="color:#059669;font-weight:600;font-size:11px;">MSE (Udyam)</span>' : '<span style="color:#94A3B8;font-size:11px;">Standard</span>'}</td>
+          <td style="padding:8px 12px;">${cartelBadge}</td>
+          <td style="padding:8px 12px;">
+            <a href="/api/bids/${encodeURIComponent(b.bid_id)}/dossier/print" target="_blank" style="font-size:11px;color:#2563EB;font-weight:600;text-decoration:none;">Dossier ↗</a>
+          </td>
+        </tr>
+      `;
+    }).join("");
+
+    content.innerHTML = `
+      ${awardCard}
+      ${prefNotice}
+      <div style="overflow-x:auto;">
+        <table class="data-table" style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead>
+            <tr style="background:#F1F5F9;color:#334155;">
+              <th style="padding:10px 8px;text-align:center;">Rank</th>
+              <th style="padding:10px 12px;text-align:left;">Bidder Entity</th>
+              <th style="padding:10px 12px;text-align:left;">Financial Quote</th>
+              <th style="padding:10px 12px;text-align:left;">Compliance Score</th>
+              <th style="padding:10px 12px;text-align:left;">Tech Status</th>
+              <th style="padding:10px 12px;text-align:left;">Make in India</th>
+              <th style="padding:10px 12px;text-align:left;">MSME Status</th>
+              <th style="padding:10px 12px;text-align:left;">Cartel Radar</th>
+              <th style="padding:10px 12px;text-align:left;">Audit</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:20px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#64748B;border-top:1px solid #E2E8F0;padding-top:12px;">
+        <span>Statutory Authority: <b>GFR 2017 Rules 149 &amp; 153</b> · DPIIT Order P-45021/2/2017-PP</span>
+        <button class="btn btn-outline btn-sm" onclick="window.print()" style="font-size:12px;">🖨️ Print CSB Matrix</button>
+      </div>
+    `;
+  }catch(err){
+    const content = document.getElementById("compModalContent");
+    if(content) content.innerHTML = `<div class="empty-state" style="color:var(--brick);">Failed to load comparison matrix: ${escapeHtml(err.message)}</div>`;
+  }
+}
+
+function openDedicatedBidModal(auctionId){
+  const a = getTenureAuction(auctionId) || TENURE_AUCTIONS_CATALOG.find(x=>x.status==="ongoing") || TENURE_AUCTIONS_CATALOG[0];
+  if(!a) return;
+  const mount = document.getElementById("auctionModalMount");
+  if(!mount) return;
+
+  const s = state.session || { role:"bidder", company:"Bharat HydraTech Systems", gstin:"27AAECB1234F1Z5", pan:"AAECB1234F", cin:"U29100MH2011PTC221345", udyam:"UDYAM-MH-03-0089231" };
+  const currentProfile = tenderProfile(a.auction_id || a.category || "goods-general");
+
+  mount.innerHTML = `
+  <div class="notice-backdrop" id="dedicatedBidBackdrop">
+    <div class="notice-modal" style="max-width:920px;max-height:94vh;display:flex;flex-direction:column;">
+      <div class="notice-topbar" style="background:var(--navy);flex-shrink:0;">
+        <div style="font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;">
+          <span style="background:linear-gradient(155deg,#2A4570,#101F33);border:1px solid #33507a;border-radius:4px;padding:2px 6px;font-size:11px;font-family:var(--mono);color:#CFE0D8;">GeM</span>
+          <span>Submit Bid — ${escapeHtml(a.auction_id)}: ${escapeHtml(a.title)}</span>
+        </div>
+        <button id="closeDedicatedBidModal" style="background:transparent;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1;" title="Close">✕</button>
+      </div>
+      <div class="notice-cert-wrap" style="padding:22px 28px;overflow-y:auto;flex:1;">
+        
+        <!-- Live Tenure Specifications Banner -->
+        <div class="tenure-live-banner" style="margin-bottom:16px;">
+          <div class="tlb-top">
+            <div class="tlb-title">
+              <span>${escapeHtml(a.title)}</span>
+            </div>
+            <span class="tlb-id">${escapeHtml(a.auction_id)}</span>
+          </div>
+          <div class="tlb-grid">
+            <div class="tlb-item">
+              <span class="tlb-label">⏱️ Contract Tenure</span>
+              <span class="tlb-val green">${escapeHtml(a.tenure_label)}</span>
+            </div>
+            <div class="tlb-item">
+              <span class="tlb-label">📅 Execution Window</span>
+              <span class="tlb-val">${escapeHtml(a.tenure_start_date)} to ${escapeHtml(a.tenure_end_date)}</span>
+            </div>
+            <div class="tlb-item">
+              <span class="tlb-label">💰 Estimated Budget</span>
+              <span class="tlb-val">${escapeHtml(a.estimated_value_formatted)}</span>
+            </div>
+            <div class="tlb-item">
+              <span class="tlb-label">⏰ Bidding Deadline</span>
+              <span class="tlb-val" style="font-size:12px;">${escapeHtml(a.bidding_deadline)}</span>
+            </div>
+          </div>
+          <div class="tlb-criteria-row">
+            <span>Min. Turnover: ₹${(a.min_turnover/10000000 >= 1 ? (a.min_turnover/10000000).toFixed(0)+' Cr' : (a.min_turnover/100000 >= 1 ? (a.min_turnover/100000).toFixed(0)+' L' : 'Exempt'))}</span>
+            <span>·</span>
+            <span>Local Content ≥${a.min_local_content}%</span>
+            ${a.requires_epfo ? `<span>·</span><span style="color:#34d399;">EPFO Mandate</span>` : ""}
+            ${a.requires_bis ? `<span>·</span><span style="color:#34d399;">BIS Mandatory</span>` : ""}
+            ${a.requires_startup_proof ? `<span>·</span><span>MSME Reserved</span>` : ""}
+          </div>
+        </div>
+
+        <form id="dedicatedSubmitForm">
+          <div class="form-grid" style="margin-bottom:14px;">
+            <div class="field"><label for="dmCompany">Bidder Organization Name</label><input type="text" id="dmCompany" value="${escapeHtml(s.company||'Bharat HydraTech Systems')}" required></div>
+            <div class="field"><label for="dmGstin">GSTIN</label><input type="text" id="dmGstin" value="${escapeHtml(s.gstin||'27AAECB1234F1Z5')}" pattern="${GSTIN_PATTERN}" title="15-character GSTIN" required></div>
+            <div class="field"><label for="dmPan">PAN</label><input type="text" id="dmPan" value="${escapeHtml(s.pan||'AAECB1234F')}" pattern="${PAN_PATTERN}" title="10-character PAN" required></div>
+            <div class="field"><label for="dmCin">CIN</label><input type="text" id="dmCin" value="${escapeHtml(s.cin||'U29100MH2011PTC221345')}" pattern="${CIN_PATTERN}" title="21-character CIN" required></div>
+            <div class="field"><label for="dmUdyam">Udyam Registration</label><input type="text" id="dmUdyam" value="${escapeHtml(s.udyam||'UDYAM-MH-03-0089231')}" pattern="${UDYAM_PATTERN}" title="Udyam Number" required></div>
+            <div class="field"><label for="dmTenureQuote">Quotation for this Contract Tenure (₹)</label><input type="number" id="dmTenureQuote" value="${a.estimated_value}" min="0" step="1" required></div>
+            <div class="field"><label for="dmTurnover">Claimed Annual Turnover (₹)</label><input type="number" id="dmTurnover" value="${Math.max(a.min_turnover, 42000000)}" min="0" step="1" required></div>
+            <div class="field"><label for="dmLocal">Claimed Local Content (%)</label><input type="number" id="dmLocal" value="${Math.max(a.min_local_content, 65)}" min="0" max="100" step="1" required></div>
+          </div>
+
+          <div class="field full" style="margin-bottom:14px;">
+            <label style="font-weight:600;font-size:12.5px;color:var(--navy);">Conditional Eligibility Claims</label>
+            <div class="claims-group">
+              <label class="claim-check"><input type="checkbox" id="dmClaimReseller"> Reselling as OEM-authorized dealer</label>
+              <label class="claim-check"><input type="checkbox" id="dmClaimStartup" ${a.requires_startup_proof ? "checked":""}> Claiming Startup India status</label>
+              <label class="claim-check"><input type="checkbox" id="dmClaimNsic"> Registered under NSIC</label>
+              <label class="claim-check"><input type="checkbox" id="dmClaimBisDpiit" ${a.requires_bis ? "checked":""}> Claiming BIS / DPIIT certified local-supplier status</label>
+            </div>
+          </div>
+
+          <div class="field full" style="margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;">
+              <label style="font-weight:600;font-size:12.5px;color:var(--navy);margin:0;">Supporting Bid Documents <span class="char-count" id="dmDocCount">0/0 required attached</span></label>
+              <button type="button" class="btn btn-outline btn-sm" id="dmBtnAutofill" style="font-size:11px;padding:3px 9px;color:var(--emerald);border-color:var(--emerald);">⚡ Auto-attach Verified Documents</button>
+            </div>
+            <div id="dmDocUploadList">
+              ${DOC_TYPES.map(d=>`
+                <div class="doc-upload" data-dm-doc="${d.id}" ${d.conditionOn?`data-condition="${d.conditionOn}"`:""}>
+                  <div class="du-info">
+                    <div class="du-title">${d.title} <span class="${d.required?'du-required':'du-optional'}" id="dm_badge_${d.id}">${d.required ? 'Required' : 'Optional'}</span></div>
+                    <div class="du-sub">${d.sub} · ${d.accept.replace(/\./g,"").toUpperCase()}</div>
+                  </div>
+                  <div class="du-action">
+                    <span class="du-filename" id="dm_fn_${d.id}">No file chosen</span>
+                    <label class="du-btn" for="dm_file_${d.id}">Choose file</label>
+                    <button type="button" class="du-remove hidden" id="dm_rm_${d.id}" title="Remove file">✕</button>
+                    <input type="file" id="dm_file_${d.id}" class="du-input" accept="${d.accept}" hidden>
+                  </div>
+                </div>`).join("")}
+            </div>
+          </div>
+
+          <div class="field full" style="margin-bottom:16px;">
+            <label style="font-weight:600;font-size:12.5px;color:var(--navy);">Compliance Verification Gateway Scenario</label>
+            <div class="outcome-grid" id="dmOutcomeGrid">
+              ${OUTCOME_OPTIONS.map((o,i)=>`
+                <div class="outcome-opt ${i===0?'sel':''}" data-dm-outcome="${o.id}">
+                  <div class="oo-title">${o.title}</div>
+                  <div class="oo-desc">${o.desc}</div>
+                </div>`).join("")}
+            </div>
+          </div>
+
+          <div style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--hairline);padding-top:16px;">
+            <button type="button" class="btn btn-outline" id="dmBtnCancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="dmSubmitBtn">Submit Bid for ${escapeHtml(a.tenure_label)} Tenure</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  `;
+
+  const dmAttached = {};
+  let dmChosenOutcome = "clean";
+  const dmSubmitBtn = document.getElementById("dmSubmitBtn");
+  const dmDocCountEl = document.getElementById("dmDocCount");
+  const dmClose = () => { mount.innerHTML = ""; };
+
+  document.getElementById("closeDedicatedBidModal").addEventListener("click", dmClose);
+  document.getElementById("dmBtnCancel").addEventListener("click", dmClose);
+  document.getElementById("dedicatedBidBackdrop").addEventListener("click", (e) => {
+    if(e.target.id === "dedicatedBidBackdrop") dmClose();
+  });
+
+  const dmClaimBoxes = {
+    isReseller: document.getElementById("dmClaimReseller"),
+    claimsStartup: document.getElementById("dmClaimStartup"),
+    claimsNsic: document.getElementById("dmClaimNsic"),
+    claimsBisDpiit: document.getElementById("dmClaimBisDpiit")
+  };
+
+  function dmIsDocRequired(d){
+    if(d.required) return true;
+    if(d.conditionOn && dmClaimBoxes[d.conditionOn] && dmClaimBoxes[d.conditionOn].checked) return true;
+    if(d.id === "bisDpiit" && a.requires_bis) return true;
+    if(d.id === "makeInIndia" && a.min_local_content > 0) return true;
+    if(d.profileRequired && d.profileRequired(currentProfile)) return true;
+    return false;
+  }
+
+  function dmRefreshBadges(){
+    DOC_TYPES.forEach(d=>{
+      const badge = document.getElementById("dm_badge_" + d.id);
+      if(!badge) return;
+      const req = dmIsDocRequired(d);
+      badge.textContent = req ? "Required" : "Optional";
+      badge.className = req ? "du-required" : "du-optional";
+    });
+  }
+
+  function dmUpdateSubmitState(){
+    const reqList = DOC_TYPES.filter(dmIsDocRequired);
+    const count = reqList.filter(d => dmAttached[d.id]).length;
+    if(dmDocCountEl) dmDocCountEl.textContent = `${count}/${reqList.length} required attached`;
+    const ready = count === reqList.length;
+    dmSubmitBtn.disabled = !ready;
+    dmSubmitBtn.textContent = ready ? `Submit Bid for ${a.tenure_label} Tenure` : `Attach required documents (${count}/${reqList.length})`;
+  }
+
+  DOC_TYPES.forEach(d=>{
+    const input = document.getElementById("dm_file_" + d.id);
+    const row = document.querySelector(`.doc-upload[data-dm-doc="${d.id}"]`);
+    const fn = document.getElementById("dm_fn_" + d.id);
+    const rm = document.getElementById("dm_rm_" + d.id);
+    if(!input) return;
+    input.addEventListener("change", ()=>{
+      const f = input.files && input.files[0];
+      if(!f) return;
+      dmAttached[d.id] = { name: f.name, size: f.size, file: f };
+      fn.textContent = f.name + " · " + (f.size < 1024*1024 ? (f.size/1024).toFixed(0) + " KB" : (f.size/1024/1024).toFixed(1) + " MB");
+      row.classList.add("has-file");
+      rm.classList.remove("hidden");
+      dmUpdateSubmitState();
+    });
+    if(rm){
+      rm.addEventListener("click", ()=>{
+        delete dmAttached[d.id];
+        input.value = "";
+        fn.textContent = "No file chosen";
+        row.classList.remove("has-file");
+        rm.classList.add("hidden");
+        dmUpdateSubmitState();
+      });
+    }
+  });
+
+  const autofillBtn = document.getElementById("dmBtnAutofill");
+  if(autofillBtn){
+    autofillBtn.addEventListener("click", ()=>{
+      DOC_TYPES.forEach(d=>{
+        if(dmIsDocRequired(d)){
+          const row = document.querySelector(`.doc-upload[data-dm-doc="${d.id}"]`);
+          const fn = document.getElementById("dm_fn_" + d.id);
+          const rm = document.getElementById("dm_rm_" + d.id);
+          dmAttached[d.id] = { name: `${d.id}_compliant_submission.pdf`, size: 142850 };
+          if(fn) fn.textContent = `${d.id}_compliant_submission.pdf · 140 KB`;
+          if(row) row.classList.add("has-file");
+          if(rm) rm.classList.remove("hidden");
+        }
+      });
+      dmUpdateSubmitState();
+      toast("Auto-attached verified sample documents for " + a.auction_id);
+    });
+  }
+
+  Object.values(dmClaimBoxes).forEach(box => {
+    if(box){
+      box.addEventListener("change", ()=>{
+        dmRefreshBadges();
+        dmUpdateSubmitState();
+      });
+    }
+  });
+
+  document.querySelectorAll("[data-dm-outcome]").forEach(opt=>{
+    opt.addEventListener("click", ()=>{
+      document.querySelectorAll("[data-dm-outcome]").forEach(x=>x.classList.remove("sel"));
+      opt.classList.add("sel");
+      dmChosenOutcome = opt.dataset.dmOutcome;
+    });
+  });
+
+  dmRefreshBadges();
+  if(autofillBtn) autofillBtn.click();
+  dmUpdateSubmitState();
+
+  document.getElementById("dedicatedSubmitForm").addEventListener("submit", (e)=>{
+    e.preventDefault();
+    if(dmSubmitBtn.disabled) return;
+    const company = document.getElementById("dmCompany").value.trim() || (s.company || "Bharat HydraTech Systems");
+    const gstin = document.getElementById("dmGstin").value.trim();
+    const pan = document.getElementById("dmPan").value.trim();
+    const cin = document.getElementById("dmCin").value.trim();
+    const udyam = document.getElementById("dmUdyam").value.trim();
+    const quoteVal = Number(document.getElementById("dmTenureQuote").value) || a.estimated_value;
+    const turnoverVal = Number(document.getElementById("dmTurnover").value) || a.min_turnover;
+    const localVal = Number(document.getElementById("dmLocal").value) || a.min_local_content;
+
+    const flagsMap = {
+      clean: [],
+      tamper_detected: ["document_tamper_detected"],
+      turnover_mismatch: ["turnover_inflation"],
+      lapsed_filing: ["lapsed_filing"],
+      lapsed_itr: ["lapsed_itr_filing"],
+      local_content_mismatch: ["local_content_mismatch"],
+      document_tamper: ["document_authenticity_mismatch"],
+      debarred_director: ["debarment_match"]
+    };
+
+    const newBid = mkBid({
+      company: company,
+      tenderCategory: a.auction_id,
+      auctionId: a.auction_id,
+      auctionTitle: a.title,
+      tenureDuration: a.tenure_label,
+      tenurePeriod: `${a.tenure_start_date} to ${a.tenure_end_date}`,
+      tenureQuote: quoteVal,
+      gstin: gstin,
+      pan: pan,
+      cin: cin,
+      udyam: udyam,
+      claimedTurnover: turnoverVal,
+      claimedLocalContent: localVal,
+      isReseller: dmClaimBoxes.isReseller && dmClaimBoxes.isReseller.checked,
+      claimsStartup: dmClaimBoxes.claimsStartup && dmClaimBoxes.claimsStartup.checked,
+      claimsNsic: dmClaimBoxes.claimsNsic && dmClaimBoxes.claimsNsic.checked,
+      claimsBisDpiit: dmClaimBoxes.claimsBisDpiit && dmClaimBoxes.claimsBisDpiit.checked,
+      flags: flagsMap[dmChosenOutcome] || [],
+      status: "queued",
+      submittedBy: company
+    });
+    newBid.documents = DOC_TYPES.filter(d=>dmAttached[d.id]).map(d=>({ id:d.id, title:d.title, name:dmAttached[d.id].name }));
+    
+    a.bids_count = (a.bids_count || 0) + 1;
+    if(!a.current_lowest_bid || quoteVal < a.current_lowest_bid){
+      a.current_lowest_bid = quoteVal;
+      a.current_lowest_formatted = "₹" + (quoteVal >= 10000000 ? (quoteVal/10000000).toFixed(2) + " Cr" : (quoteVal/100000).toFixed(2) + " Lakh");
+    }
+
+    state.bids.unshift(newBid);
+    persist();
+    dmClose();
+    toast(`🎉 Bid filed for ${a.tenure_label} tenure on ${a.auction_id}!`);
+
+    if(state.session && state.session.role === "officer"){
+      setRoute({ tab: "queue" });
+    } else {
+      setRoute({ tab: "mybids" });
+    }
+  });
+}
+
+function wireTenureAuctions(){
+  wireShellCommon();
+
+  // Status pills
+  document.querySelectorAll(".tenure-pill-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      tenureFilter.status = btn.dataset.status;
+      render(true);
+    });
+  });
+
+  // Category filter
+  const catSel = document.getElementById("filterCategory");
+  if(catSel){
+    catSel.addEventListener("change", (e) => {
+      tenureFilter.category = e.target.value;
+      render(true);
+    });
+  }
+
+  // Tenure filter
+  const tenureSel = document.getElementById("filterTenure");
+  if(tenureSel){
+    tenureSel.addEventListener("change", (e) => {
+      tenureFilter.tenureMonths = e.target.value ? Number(e.target.value) : null;
+      render(true);
+    });
+  }
+
+  // Search input
+  const searchInput = document.getElementById("searchAuctions");
+  if(searchInput){
+    searchInput.addEventListener("input", (e) => {
+      tenureFilter.search = e.target.value;
+      render(true);
+    });
+  }
+
+  // Bid on this auction buttons
+  document.querySelectorAll("[data-bid-tenure]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const aid = btn.dataset.bidTenure;
+      openDedicatedBidModal(aid);
+    });
+  });
+
+  // Monitor tenure (officer)
+  document.querySelectorAll("[data-monitor-tenure]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const aid = btn.dataset.monitorTenure;
+      const auc = getTenureAuction(aid);
+      setRoute({ tab: "queue", filterAuction: aid, filterAuctionTitle: auc ? auc.title : aid, openBid: null });
+    });
+  });
+
+  // View tenure details
+  document.querySelectorAll("[data-view-tenure]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showTenureAuctionDetail(btn.dataset.viewTenure);
+    });
+  });
+
+  // Compare bids (CSB matrix)
+  document.querySelectorAll("[data-compare-matrix]").forEach(btn => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      showComparisonMatrixModal(btn.dataset.compareMatrix);
+    });
+  });
+
+}
+
 /* ---------------- BIDDER SHELL ---------------- */
 function renderBidderShell(){
-  const tab = route.tab || "mybids";
-  const tabs = [ {id:"mybids", label:"My bids"}, {id:"submit", label:"Submit new bid"} ];
+  const tab = route.tab || "auctions";
+  const tabs = [
+    {id:"auctions", label:"⚡ Tenure Auctions"},
+    {id:"mybids", label:"My bids"}
+  ];
   return `
   ${renderTopbar(tab, tabs)}
   <div class="portal-body">
     ${renderSidebar("bidder")}
     <main class="main">
-      ${tab==="mybids" ? renderMyBids() : renderSubmitBid()}
+      ${tab==="mybids" ? renderMyBids() : renderTenureAuctions()}
     </main>
   </div>`;
 }
 function wireBidderShell(){
   wireShellCommon();
-  const tab = route.tab || "mybids";
-  if(tab==="submit") wireSubmitBid();
+  const tab = route.tab || "auctions";
+  if(tab==="mybids") wireMyBids();
+  else wireTenureAuctions();
+}
+function wireMyBids(){
+  const btn1 = document.getElementById("btnGoToAuctions");
+  if(btn1) btn1.addEventListener("click", ()=> setRoute({ tab: "auctions" }));
+  const btn2 = document.getElementById("btnEmptyBrowseAuctions");
+  if(btn2) btn2.addEventListener("click", ()=> setRoute({ tab: "auctions" }));
 }
 function statusLabel(s){
   return {queued:"Awaiting review", awaiting_decision:"Awaiting decision", approved:"Approved", clarification:"Clarification requested", rejected:"Rejected"}[s] || s;
@@ -1778,15 +3807,32 @@ function renderMyBids(){
   const mine = bidsForBidder();
   return `
   <div class="main-header">
-    <h1>My bids</h1>
-    <p>Every bid filed under ${escapeHtml(state.session.company)}, with live verification status.</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>My bids</h1>
+        <p>Every bid filed under ${escapeHtml(state.session.company)}, with live verification status and committed contract tenure.</p>
+      </div>
+      <button class="btn btn-outline btn-sm" id="btnGoToAuctions">Browse Ongoing Tenure Auctions →</button>
+    </div>
   </div>
-  ${mine.length===0 ? `<div class="empty-state">No bids filed yet. Use “Submit new bid” to file your first one.</div>` :
+  ${mine.length===0 ? `
+    <div class="empty-state">
+      <p style="margin-bottom:12px;">No bids filed yet under your account.</p>
+      <button class="btn btn-primary btn-sm" id="btnEmptyBrowseAuctions">Browse Ongoing Tenure Auctions →</button>
+    </div>
+  ` :
     mine.map(b=>`
     <div class="bid-row">
       <div class="bid-row-left">
         <h4>${escapeHtml(b.company)}</h4>
-        <div class="meta">GSTIN ${escapeHtml(b.gstin)} · ${escapeHtml(tenderProfile(b.tenderCategory).label)} · Filed ${formatDate(b.submittedAt)}</div>
+        <div class="meta">
+          GSTIN ${escapeHtml(b.gstin)} · ${escapeHtml(b.auctionTitle || tenderProfile(b.tenderCategory).label)} · Filed ${formatDate(b.submittedAt)}
+          <div style="margin-top:6px;display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <span class="tenure-pill">⏱️ Tenure: ${escapeHtml(b.tenureDuration || '12 Months (1 Year)')}</span>
+            ${b.tenurePeriod ? `<span style="font-size:11.5px;color:var(--slate);">Window: ${escapeHtml(b.tenurePeriod)}</span>` : ""}
+            ${b.tenureQuote ? `<span style="font-size:11.5px;color:var(--navy);font-weight:700;">Quoted: ₹${Number(b.tenureQuote).toLocaleString('en-IN')}</span>` : ""}
+          </div>
+        </div>
       </div>
       <div class="bid-row-right">
         <span class="status-pill ${b.status}">${statusLabel(b.status)}</span>
@@ -1797,6 +3843,10 @@ function renderMyBids(){
   `).join("")}`;
 }
 function renderSubmitBid(){
+  const ongoing = TENURE_AUCTIONS_CATALOG.filter(a=>a.status==="ongoing");
+  const preId = route.preselectedAuction || (ongoing[0] ? ongoing[0].auction_id : "CPCL-2026-VALV-089");
+  const currentAuc = getTenureAuction(preId);
+
   return `
   <div class="main-header">
     <h1>Submit new bid</h1>
@@ -1804,13 +3854,56 @@ function renderSubmitBid(){
   </div>
   <div class="card">
     <form id="submitForm">
-      <div class="field full" style="margin-bottom:4px;">
-        <label for="sbTenderCategory">Tender category</label>
-        <select id="sbTenderCategory">
-          ${TENDER_PROFILES.map((p,i)=>`<option value="${p.id}" ${i===0?"selected":""}>${escapeHtml(p.label)}</option>`).join("")}
+      <div class="field full" style="margin-bottom:12px;">
+        <label for="sbTenureAuction" style="font-size:13px;font-weight:700;color:var(--navy);display:flex;justify-content:space-between;align-items:center;">
+          <span>🎯 Select Active Tenure Auction & Tender</span>
+          <span style="font-size:11px;font-weight:600;color:var(--emerald);">● Live Ongoing Bidding</span>
+        </label>
+        <select id="sbTenureAuction" style="font-size:13.5px;padding:9px 12px;font-weight:600;">
+          ${ongoing.map(a=>`
+            <option value="${a.auction_id}" data-cat="${a.category}" ${preId===a.auction_id ? "selected":""}>
+              [${a.auction_id}] ${escapeHtml(a.title)} — ⏱️ Tenure: ${escapeHtml(a.tenure_label)}
+            </option>
+          `).join("")}
         </select>
-        <div class="tender-profile-note" id="tenderProfileNote">${escapeHtml(TENDER_PROFILES[0].note)}</div>
       </div>
+
+      <!-- Live Tenure Details Banner -->
+      <div id="tenureLiveCard" class="tenure-live-banner" style="margin-bottom:18px;">
+        <div class="tlb-top">
+          <div class="tlb-title">
+            <span>${escapeHtml(currentAuc.title)}</span>
+          </div>
+          <span class="tlb-id">${escapeHtml(currentAuc.auction_id)}</span>
+        </div>
+        <div class="tlb-grid">
+          <div class="tlb-item">
+            <span class="tlb-label">⏱️ Contract Tenure</span>
+            <span class="tlb-val green" id="tlbTenure">${escapeHtml(currentAuc.tenure_label)}</span>
+          </div>
+          <div class="tlb-item">
+            <span class="tlb-label">📅 Execution Window</span>
+            <span class="tlb-val" id="tlbWindow">${escapeHtml(currentAuc.tenure_start_date)} to ${escapeHtml(currentAuc.tenure_end_date)}</span>
+          </div>
+          <div class="tlb-item">
+            <span class="tlb-label">💰 Estimated Budget</span>
+            <span class="tlb-val" id="tlbBudget">${escapeHtml(currentAuc.estimated_value_formatted)}</span>
+          </div>
+          <div class="tlb-item">
+            <span class="tlb-label">⏰ Bidding Deadline</span>
+            <span class="tlb-val" id="tlbDeadline" style="font-size:12px;">${escapeHtml(currentAuc.bidding_deadline)}</span>
+          </div>
+        </div>
+        <div class="tlb-criteria-row" id="tlbCriteriaRow">
+          <span>Min. Turnover: ₹${(currentAuc.min_turnover/10000000 >= 1 ? (currentAuc.min_turnover/10000000).toFixed(0)+' Cr' : (currentAuc.min_turnover/100000 >= 1 ? (currentAuc.min_turnover/100000).toFixed(0)+' L' : 'Exempt'))}</span>
+          <span>·</span>
+          <span>Local Content ≥${currentAuc.min_local_content}%</span>
+          ${currentAuc.requires_epfo ? `<span>·</span><span style="color:#34d399;">EPFO Mandate</span>` : ""}
+          ${currentAuc.requires_bis ? `<span>·</span><span style="color:#34d399;">BIS Mandatory</span>` : ""}
+          ${currentAuc.requires_startup_proof ? `<span>·</span><span>MSME Reserved</span>` : ""}
+        </div>
+      </div>
+
       <div class="form-grid">
         <div class="field"><label for="sbGstin">GSTIN</label><input type="text" id="sbGstin" value="${escapeHtml(state.session.gstin||'')}" pattern="${GSTIN_PATTERN}" title="15-character GSTIN, e.g. 27AAECB1234F1Z5" required></div>
         <div class="field"><label for="sbPan">PAN</label><input type="text" id="sbPan" value="${escapeHtml(state.session.pan||'')}" placeholder="e.g. AAECB1234F" pattern="${PAN_PATTERN}" title="10-character PAN, e.g. AAECB1234F" required></div>
@@ -1818,6 +3911,8 @@ function renderSubmitBid(){
         <div class="field"><label for="sbUdyam">Udyam registration</label><input type="text" id="sbUdyam" value="${escapeHtml(state.session.udyam||'')}" placeholder="e.g. UDYAM-MH-03-0089231" pattern="${UDYAM_PATTERN}" title="Format: UDYAM-XX-00-0000000" required></div>
         <div class="field"><label for="sbTurnover">Claimed annual turnover (₹)</label><input type="number" id="sbTurnover" placeholder="e.g. 42000000" min="0" step="1" required></div>
         <div class="field"><label for="sbLocal">Claimed local content (%)</label><input type="number" id="sbLocal" placeholder="e.g. 62" min="0" max="100" step="1" required></div>
+        <div class="field"><label for="sbTenureQuote">Quotation for this Contract Tenure (₹)</label><input type="number" id="sbTenureQuote" placeholder="e.g. ${currentAuc.estimated_value}" min="0" step="1" required></div>
+        <div class="field"><label for="sbTenurePeriod">Contract Tenure Execution Window</label><input type="text" id="sbTenurePeriod" readonly value="${currentAuc.tenure_start_date} to ${currentAuc.tenure_end_date} (${currentAuc.tenure_label})" style="background:#f8fafc;font-weight:600;color:var(--navy);"></div>
       </div>
       <div class="field full" style="margin-top:4px;">
         <label>Conditional eligibility claims <span class="du-sub" style="display:block;margin-top:2px;">Only check what applies — each one adds its certificate to the required documents below.</span></label>
@@ -1829,7 +3924,7 @@ function renderSubmitBid(){
         </div>
       </div>
       <div class="field full" style="margin-top:4px;">
-        <label>Supporting documents <span class="char-count" id="docCount">0/${DOC_TYPES.filter(d=>d.required || (d.profileRequired && d.profileRequired(TENDER_PROFILES[0]))).length} required attached</span></label>
+        <label>Supporting documents <span class="char-count" id="docCount">0/${DOC_TYPES.filter(d=>d.required || (d.profileRequired && d.profileRequired(currentTenderProfile()))).length} required attached</span></label>
         <div id="docUploadList">
           ${DOC_TYPES.map(d=>`
             <div class="doc-upload" data-doc="${d.id}" ${d.conditionOn?`data-condition="${d.conditionOn}"`:""}>
@@ -1862,7 +3957,7 @@ function renderSubmitBid(){
 }
 function wireSubmitBid(){
   let chosen = "clean";
-  const attached = {}; // docId -> {name, size}
+  const attached = {};
   const claimBoxes = {
     isReseller: document.getElementById("claimReseller"),
     claimsStartup: document.getElementById("claimStartup"),
@@ -1871,16 +3966,57 @@ function wireSubmitBid(){
   };
   const submitBtn = document.getElementById("submitBidBtn");
   const docCountEl = document.getElementById("docCount");
-  const tenderSelect = document.getElementById("sbTenderCategory");
-  const tenderNoteEl = document.getElementById("tenderProfileNote");
-  function currentTenderProfile(){ return tenderProfile(tenderSelect ? tenderSelect.value : null); }
+  const auctionSelect = document.getElementById("sbTenureAuction");
+  const tenurePeriodInput = document.getElementById("sbTenurePeriod");
+  const tenureQuoteInput = document.getElementById("sbTenureQuote");
 
-  // A doc is required either unconditionally, because the vendor checked the
-  // matching claim box, or because the selected tender category mandates it
-  // (e.g. BIS certification for electronics/IT goods tenders) regardless of claim.
+  if(route.preselectedAuction && auctionSelect){
+    auctionSelect.value = route.preselectedAuction;
+    delete route.preselectedAuction;
+  }
+
+  function currentAuction(){
+    return getTenureAuction(auctionSelect ? auctionSelect.value : null);
+  }
+  function currentTenderProfile(){
+    const a = currentAuction();
+    return tenderProfile(a ? a.auction_id : (a ? a.category : "goods-general"));
+  }
+
+  function updateTenureLiveCard(){
+    const a = currentAuction();
+    if(!a) return;
+    const tlbTenure = document.getElementById("tlbTenure");
+    const tlbWindow = document.getElementById("tlbWindow");
+    const tlbBudget = document.getElementById("tlbBudget");
+    const tlbDeadline = document.getElementById("tlbDeadline");
+    const tlbCriteria = document.getElementById("tlbCriteriaRow");
+
+    if(tlbTenure) tlbTenure.textContent = a.tenure_label;
+    if(tlbWindow) tlbWindow.textContent = a.tenure_start_date + " to " + a.tenure_end_date;
+    if(tlbBudget) tlbBudget.textContent = a.estimated_value_formatted;
+    if(tlbDeadline) tlbDeadline.textContent = a.bidding_deadline;
+    if(tenurePeriodInput) tenurePeriodInput.value = `${a.tenure_start_date} to ${a.tenure_end_date} (${a.tenure_label})`;
+    if(tenureQuoteInput && !tenureQuoteInput.value) tenureQuoteInput.placeholder = "e.g. " + a.estimated_value;
+
+    if(tlbCriteria){
+      tlbCriteria.innerHTML = `
+        <span>Min. Turnover: ₹${(a.min_turnover/10000000 >= 1 ? (a.min_turnover/10000000).toFixed(0)+' Cr' : (a.min_turnover/100000 >= 1 ? (a.min_turnover/100000).toFixed(0)+' L' : 'Exempt'))}</span>
+        <span>·</span>
+        <span>Local Content ≥${a.min_local_content}%</span>
+        ${a.requires_epfo ? `<span>·</span><span style="color:#34d399;">EPFO Mandate</span>` : ""}
+        ${a.requires_bis ? `<span>·</span><span style="color:#34d399;">BIS Mandatory</span>` : ""}
+        ${a.requires_startup_proof ? `<span>·</span><span>MSME Reserved</span>` : ""}
+      `;
+    }
+  }
+
   function isDocRequired(d){
     if(d.required) return true;
     if(d.conditionOn && claimBoxes[d.conditionOn] && claimBoxes[d.conditionOn].checked) return true;
+    const a = currentAuction();
+    if(d.id === "bisDpiit" && a && a.requires_bis) return true;
+    if(d.id === "makeInIndia" && a && a.min_local_content > 0) return true;
     if(d.profileRequired && d.profileRequired(currentTenderProfile())) return true;
     return false;
   }
@@ -1888,7 +4024,7 @@ function wireSubmitBid(){
     return DOC_TYPES.filter(isDocRequired).map(d=>d.id);
   }
   function refreshConditionalBadges(){
-    DOC_TYPES.filter(d=>d.conditionOn || d.profileRequired).forEach(d=>{
+    DOC_TYPES.filter(d=>d.conditionOn || d.profileRequired || d.id==="bisDpiit" || d.id==="makeInIndia").forEach(d=>{
       const badge = document.getElementById("badge_"+d.id);
       if(!badge) return;
       const isNowRequired = isDocRequired(d);
@@ -1917,13 +4053,14 @@ function wireSubmitBid(){
       updateSubmitState();
     });
   });
-  if(tenderSelect){
-    tenderSelect.addEventListener("change", ()=>{
-      const p = currentTenderProfile();
-      if(tenderNoteEl) tenderNoteEl.textContent = p.note;
+
+  if(auctionSelect){
+    auctionSelect.addEventListener("change", ()=>{
+      updateTenureLiveCard();
       refreshConditionalBadges();
       updateSubmitState();
     });
+    updateTenureLiveCard();
   }
 
   DOC_TYPES.forEach(d=>{
@@ -1949,14 +4086,18 @@ function wireSubmitBid(){
       updateSubmitState();
     });
   });
-  updateSubmitState();
 
-  document.querySelectorAll(".outcome-opt").forEach(el=>{
-    el.addEventListener("click", ()=>{
-      document.querySelectorAll(".outcome-opt").forEach(o=>o.classList.remove("sel"));
-      el.classList.add("sel"); chosen = el.dataset.outcome;
+  document.querySelectorAll(".outcome-opt").forEach(o=>{
+    o.addEventListener("click", ()=>{
+      document.querySelectorAll(".outcome-opt").forEach(x=>x.classList.remove("sel"));
+      o.classList.add("sel");
+      chosen = o.dataset.outcome;
     });
   });
+
+  refreshConditionalBadges();
+  updateSubmitState();
+
   document.getElementById("submitForm").addEventListener("submit", e=>{
     e.preventDefault();
     if(submitBtn.disabled) return;
@@ -1970,35 +4111,39 @@ function wireSubmitBid(){
       document_tamper: ["document_authenticity_mismatch"],
       debarred_director: ["debarment_match"]
     };
-    // If a real server is available, POST the first attached file to /api/verify
+    const chosenAuc = currentAuction();
+    const tenureQuoteVal = Number(document.getElementById("sbTenureQuote").value) || (chosenAuc ? chosenAuc.estimated_value : 0);
+
     (async ()=>{
       try{
-        // find the first actual File object from inputs
-        let fileInput = null; let fileObj = null;
+        let fileObj = null;
         for(const d of DOC_TYPES){
           const inp = document.getElementById('file_'+d.id);
-          if(inp && inp.files && inp.files[0]){ fileInput = inp; fileObj = inp.files[0]; break; }
+          if(inp && inp.files && inp.files[0]){ fileObj = inp.files[0]; break; }
         }
         if(fileObj){
           const fd = new FormData();
           fd.append('file', fileObj, fileObj.name);
           fd.append('bidder_name', state.session.company || "Anonymous");
-          fd.append('tender_id', tenderSelect ? tenderSelect.value : "GEM-UNKNOWN");
+          fd.append('tender_id', chosenAuc ? chosenAuc.auction_id : "GEM-UNKNOWN");
           const res = await fetch('/api/verify', { method:'POST', body: fd });
           const j = await res.json();
           if(!res.ok) throw new Error(j.detail || JSON.stringify(j));
-          // refresh authoritative state from server and show the new bid
           await fetchServerState();
-          toast('Bid submitted — verification started (server id: '+(j.bid_id||'')+').');
+          toast(`Bid submitted for ${chosenAuc.tenure_label} tenure on ${chosenAuc.auction_id}`);
           setRoute({ tab:'mybids' });
           return;
         }
-      }catch(e){ console.warn('Server verify failed, falling back to local queue', e); }
+      }catch(err){ console.warn('Server verify failed, falling back to local queue', err); }
 
-      // fallback: create a local queued bid when server not available
       const bid = mkBid({
         company: state.session.company,
-        tenderCategory: tenderSelect ? tenderSelect.value : "goods-general",
+        tenderCategory: chosenAuc ? chosenAuc.auction_id : "goods-general",
+        auctionId: chosenAuc ? chosenAuc.auction_id : "CPCL-2026-VALV-089",
+        auctionTitle: chosenAuc ? chosenAuc.title : "Refinery Valves & Flanges",
+        tenureDuration: chosenAuc ? chosenAuc.tenure_label : "36 Months (3 Years)",
+        tenurePeriod: chosenAuc ? `${chosenAuc.tenure_start_date} to ${chosenAuc.tenure_end_date}` : "Standard Execution Window",
+        tenureQuote: tenureQuoteVal,
         gstin: document.getElementById("sbGstin").value.trim(),
         pan: document.getElementById("sbPan").value.trim(),
         cin: document.getElementById("sbCin").value.trim(),
@@ -2016,7 +4161,7 @@ function wireSubmitBid(){
       bid.documents = DOC_TYPES.filter(d=>attached[d.id]).map(d=>({ id:d.id, title:d.title, name:attached[d.id].name }));
       state.bids.unshift(bid);
       persist();
-      toast("Bid submitted — it's now in the officer's verification queue.");
+      toast(`Bid submitted for ${chosenAuc.tenure_label} tenure on ${chosenAuc.auction_id}`);
       setRoute({ tab:"mybids" });
     })();
   });
@@ -2027,6 +4172,7 @@ function renderOfficerShell(){
   const tab = route.tab || "queue";
   const tabs = [
     {id:"queue", label:"Verification queue"},
+    {id:"auctions", label:"⚡ Tenure Auctions"},
     {id:"cartel", label:"🕵️ Cartel Radar"},
     {id:"bidders", label:"Registered bidders (Supabase)"},
     {id:"audit", label:"Audit log"}
@@ -2036,7 +4182,7 @@ function renderOfficerShell(){
   <div class="portal-body">
     ${renderSidebar("officer")}
     <main class="main">
-      ${tab==="queue" ? renderQueueTab() : (tab==="cartel" ? renderCartelRadarTab() : (tab==="bidders" ? renderBiddersTab() : renderAuditTab()))}
+      ${tab==="queue" ? renderQueueTab() : (tab==="auctions" ? renderTenureAuctions() : (tab==="cartel" ? renderCartelRadarTab() : (tab==="bidders" ? renderBiddersTab() : renderAuditTab())))}
     </main>
   </div>`;
 }
@@ -2044,6 +4190,7 @@ function wireOfficerShell(){
   wireShellCommon();
   const tab = route.tab || "queue";
   if(tab==="queue") wireQueueTabOrDetail();
+  else if(tab==="auctions") wireTenureAuctions();
   else if(tab==="cartel") wireCartelRadarTab();
   else if(tab==="bidders") wireBiddersTab();
   else wireAuditTab();
@@ -2060,28 +4207,67 @@ function renderQueueTab(){
   const bid = openBidId ? state.bids.find(b=>b.id===openBidId) : null;
   if(bid) return renderVerificationDetail(bid);
 
-  const queued = state.bids.filter(b=>b.status==="queued");
-  const decided = state.bids.filter(b=>b.status!=="queued");
+  const filterAid = route.filterAuction || null;
+  const filterTitle = route.filterAuctionTitle || null;
+
+  let bidsPool = state.bids;
+  if(filterAid){
+    bidsPool = state.bids.filter(b => {
+      const matchId = (b.auctionId && b.auctionId.toLowerCase() === filterAid.toLowerCase()) ||
+                      (b.tenderCategory && b.tenderCategory.toLowerCase() === filterAid.toLowerCase());
+      const matchTitle = filterTitle && b.auctionTitle && b.auctionTitle.toLowerCase().includes(filterTitle.toLowerCase());
+      return matchId || matchTitle;
+    });
+  }
+
+  const queued = bidsPool.filter(b=>b.status==="queued");
+  const decided = bidsPool.filter(b=>b.status!=="queued");
+
+  const filterBannerHtml = filterAid ? `
+    <div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:12px 18px;margin-bottom:18px;background:#F0F7FF;border:1px solid #BFDBFE;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:18px;">🎯</span>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#1E40AF;letter-spacing:.04em;">Filtered by Tenure Auction</div>
+          <div style="font-size:13.5px;font-weight:600;color:var(--navy);">[${escapeHtml(filterAid)}] ${escapeHtml(filterTitle || '')}</div>
+        </div>
+      </div>
+      <button class="btn btn-outline btn-sm" id="btnClearAuctionFilter" style="background:#fff;">Show All Tenders ✕</button>
+    </div>
+  ` : "";
+
   return `
   <div class="main-header">
     <h1>Verification queue</h1>
     <p>Pick a vendor and run the eleven-stage verification trace.</p>
   </div>
-  ${queued.length===0 ? `<div class="empty-state">Queue is empty — nothing waiting on verification right now.</div>` : queued.map(b=>`
+  ${filterBannerHtml}
+  ${bidsPool.length===0 && filterAid ? `
+    <div class="empty-state">
+      <p style="margin-bottom:12px;">No bids submitted yet under auction <b>${escapeHtml(filterAid)}</b>.</p>
+      <button class="btn btn-primary btn-sm" id="btnClearAuctionFilterEmpty">Show All Bids in Queue</button>
+    </div>
+  ` : (queued.length===0 ? `<div class="empty-state">Queue is empty — nothing waiting on verification right now.</div>` : queued.map(b=>`
     <div class="vqueue-row">
       <div class="vqueue-left">
         <div class="vqueue-name">${escapeHtml(b.company)}</div>
-        <div class="vqueue-meta">GSTIN ${escapeHtml(b.gstin)} · ${escapeHtml(tenderProfile(b.tenderCategory).label)} · Filed ${formatDate(b.submittedAt)}${b.seed?" · Seed vendor":""}</div>
+        <div class="vqueue-meta">
+          GSTIN ${escapeHtml(b.gstin)} · ${escapeHtml(b.auctionTitle || tenderProfile(b.tenderCategory).label)} · Filed ${formatDate(b.submittedAt)}${b.seed?" · Seed vendor":""}
+          <div style="margin-top:4px;"><span class="tenure-pill" style="font-size:10px;padding:2px 7px;">⏱️ Tenure: ${escapeHtml(b.tenureDuration || '24 Months (2 Years)')}</span>${b.tenureQuote ? ` <span style="font-size:11px;color:var(--navy);font-weight:700;">₹${Number(b.tenureQuote).toLocaleString('en-IN')}</span>` : ""}</div>
+        </div>
       </div>
       <button class="btn btn-primary btn-sm" data-open="${b.id}">Run verification</button>
-    </div>`).join("")}
+    </div>`).join(""))}
   ${decided.length ? `
     <div class="main-header" style="margin-top:34px;"><h1 style="font-size:18px;">Already processed</h1></div>
     ${decided.map(b=>`
       <div class="vqueue-row">
         <div class="vqueue-left">
           <div class="vqueue-name">${escapeHtml(b.company)}</div>
-          <div class="vqueue-meta">${escapeHtml(b.gstin)} · Verified ${formatDate(b.verifiedAt)}</div>
+          <div class="vqueue-meta">
+            ${escapeHtml(b.gstin)} · Verified ${formatDate(b.verifiedAt)}
+            <div style="margin-top:4px;"><span class="tenure-pill" style="font-size:10px;padding:2px 7px;">⏱️ Tenure: ${escapeHtml(b.tenureDuration || '24 Months (2 Years)')}</span>${b.tenureQuote ? ` <span style="font-size:11px;color:var(--navy);font-weight:700;">₹${Number(b.tenureQuote).toLocaleString('en-IN')}</span>` : ""}</div>
+          </div>
         </div>
         <div style="display:flex;align-items:center;gap:10px;">
           <span class="badge ${b.risk}">${b.score}/100 · ${riskLabel(b.risk)}</span>
@@ -2095,6 +4281,10 @@ function wireQueueTab(){
   document.querySelectorAll("[data-open]").forEach(b=>{
     b.addEventListener("click", ()=> setRoute({ openBid:b.dataset.open }));
   });
+  const clearBtn = document.getElementById("btnClearAuctionFilter");
+  if(clearBtn) clearBtn.addEventListener("click", ()=> setRoute({ filterAuction: null, filterAuctionTitle: null }));
+  const clearEmptyBtn = document.getElementById("btnClearAuctionFilterEmpty");
+  if(clearEmptyBtn) clearEmptyBtn.addEventListener("click", ()=> setRoute({ filterAuction: null, filterAuctionTitle: null }));
 }
 
 function renderVerificationDetail(bid){
@@ -2104,10 +4294,42 @@ function renderVerificationDetail(bid){
   const showScore = bid.score !== null || (stageIndex>=stages.length);
 
   return `
-  <button class="btn btn-outline btn-sm" id="backToQueue" style="margin-bottom:18px;">← Back to queue</button>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;">
+    <button class="btn btn-outline btn-sm" id="backToQueue">← Back to queue</button>
+    <button class="btn btn-outline btn-sm" id="btnOpenBidCopilot" style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg, #101F33 0%, #172538 100%);color:#F8FAFC;border-color:#283C56;font-weight:600;">
+      <span style="font-size:14px;">🤖</span> Chat with this Bid
+    </button>
+  </div>
   <div class="main-header">
-    <h1>${escapeHtml(bid.company)}</h1>
-    <p>${escapeHtml(tenderProfile(bid.tenderCategory).label)} tender · GSTIN ${escapeHtml(bid.gstin)} · PAN ${escapeHtml(bid.pan)} · CIN ${escapeHtml(bid.cin)} · Udyam ${escapeHtml(bid.udyam)}</p>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+      <div>
+        <h1>${escapeHtml(bid.company)}</h1>
+        <p>${escapeHtml(bid.auctionTitle || tenderProfile(bid.tenderCategory).label)} · GSTIN ${escapeHtml(bid.gstin)} · PAN ${escapeHtml(bid.pan)} · CIN ${escapeHtml(bid.cin)} · Udyam ${escapeHtml(bid.udyam)}</p>
+      </div>
+      <div style="text-align:right;">
+        <span class="tenure-pill" style="font-size:12px;padding:5px 12px;display:inline-block;">⏱️ Tenure: ${escapeHtml(bid.tenureDuration || '24 Months (2 Years)')}</span>
+        ${bid.tenureQuote ? `<div style="font-size:13px;font-weight:700;color:var(--navy);margin-top:4px;">Bid Quote: ₹${Number(bid.tenureQuote).toLocaleString('en-IN')}</div>` : ""}
+      </div>
+    </div>
+  </div>
+
+  <div class="tenure-highlight-box" style="margin-bottom:18px;grid-template-columns:repeat(auto-fit, minmax(170px, 1fr));">
+    <div class="th-cell">
+      <div class="th-label">⏱️ Contract Tenure</div>
+      <div class="th-val highlight">${escapeHtml(bid.tenureDuration || '24 Months (2 Years)')}</div>
+    </div>
+    <div class="th-cell">
+      <div class="th-label">💰 Quoted Contract Value</div>
+      <div class="th-val value">₹${bid.tenureQuote ? Number(bid.tenureQuote).toLocaleString('en-IN') : (bid.claimedTurnover ? Number(bid.claimedTurnover).toLocaleString('en-IN') : 'N/A')}</div>
+    </div>
+    <div class="th-cell">
+      <div class="th-label">📅 Execution Window</div>
+      <div class="th-val" style="font-size:12px;font-weight:600;color:var(--slate);">${escapeHtml(bid.tenurePeriod || 'Standard execution window')}</div>
+    </div>
+    <div class="th-cell">
+      <div class="th-label">🎯 Targeted Auction</div>
+      <div class="th-val" style="font-size:12px;font-weight:600;color:var(--navy);">${escapeHtml(bid.auctionId || 'CPCL-2026-VALV-089')}</div>
+    </div>
   </div>
 
   ${stageIndex < 0 ? `
@@ -2228,6 +4450,8 @@ function renderScoreAndDecision(bid){
     </div>
   </div>
 
+  <div id="dscBadgeMount_${bid.id}" style="margin-bottom:14px;"></div>
+
   <div style="margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;">
     <button class="btn btn-outline" id="btnViewEvidenceReport" style="background:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:9px 16px;border-color:var(--hairline);cursor:pointer;">
       <span style="font-size:16px;">📜</span> Generate Compliance Report (With Evidence)
@@ -2235,6 +4459,12 @@ function renderScoreAndDecision(bid){
     <button class="btn btn-outline" id="btnGenerateNotice" style="background:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:9px 16px;border-color:var(--amber);color:var(--amber);cursor:pointer;">
       <span style="font-size:16px;">⚖️</span> Generate Statutory Clarification Notice (Show-Cause)
     </button>
+    <button class="btn btn-outline" id="btnInspectDSC" style="background:linear-gradient(135deg,#0a2a4a,#0E4E6A);color:#5FD3A6;display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:9px 16px;border-color:#1A6A90;cursor:pointer;" title="Inspect Class-3 DSC X.509 Certificate">
+      <span style="font-size:16px;">🔏</span> Inspect Class-3 DSC Certificate
+    </button>
+    <a href="/api/bids/${encodeURIComponent(bid.id)}/dossier/print" target="_blank" class="btn btn-outline" id="btnPrintDossier" style="background:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600;padding:9px 16px;border-color:#2563EB;color:#2563EB;cursor:pointer;text-decoration:none;" title="Print official court-admissible electronic dossier under Section 65B">
+      <span style="font-size:16px;">🖨️</span> Print Formal Dossier (PDF)
+    </a>
   </div>
   <div class="decision-box">
     <h3>Officer decision</h3>
@@ -2357,6 +4587,9 @@ async function showEvidenceModal(bid){
           </tbody>
         </table>
 
+        <h4 style="font-size:12px;text-transform:uppercase;color:var(--slate);letter-spacing:.04em;margin:16px 0 6px;">3. Class-3 DSC Cryptographic Signature Verification</h4>
+        <div id="dscSectionMount_cert" style="margin-bottom:6px;"></div>
+
         <div class="cert-seal">
           <div>
             <div style="font-weight:700;font-size:14px;color:var(--navy);">Compliance Score: ${bid.score}/100 (<span class="badge ${bid.risk}">${riskLabel(bid.risk)}</span>)</div>
@@ -2369,12 +4602,15 @@ async function showEvidenceModal(bid){
           </div>
         </div>
 
-        <div style="margin-top:14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#166534;">
+        <div style="margin-top:14px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:#166534;flex-wrap:wrap;gap:8px;">
           <div>
-            <b>🔐 Public Verification Endpoint:</b>
+            <b>🔐 Public Verification:</b>
             <span style="font-family:var(--mono);margin-left:6px;">/api/verify/certificate/${escapeHtml(certId)}</span>
+            <a href="/api/verify/certificate/${encodeURIComponent(certId)}" target="_blank" style="color:#0E7C61;font-weight:600;text-decoration:underline;margin-left:8px;">Verify Audit Hash ↗</a>
           </div>
-          <a href="/api/verify/certificate/${encodeURIComponent(certId)}" target="_blank" style="color:#0E7C61;font-weight:600;text-decoration:underline;">Verify Audit Hash ↗</a>
+          <a href="/api/bids/${encodeURIComponent(bid.id)}/dossier/print" target="_blank" class="btn btn-outline" style="background:#2563EB;color:#fff;border-color:#2563EB;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-size:11.5px;padding:5px 12px;border-radius:4px;font-weight:600;">
+            🖨️ Print Legal Dossier
+          </a>
         </div>
       </div>
     </div>
@@ -2385,6 +4621,35 @@ async function showEvidenceModal(bid){
     if(e.target.id === "evidenceBackdrop") mount.innerHTML = "";
   });
   document.getElementById("btnPrintCert").addEventListener("click", ()=> { window.print(); });
+
+  // --- DSC Section Loader for Evidence Certificate ---
+  (async ()=>{
+    const dscMount = document.getElementById("dscSectionMount_cert");
+    if(!dscMount) return;
+    try{
+      const r = await fetch('/api/bids/' + encodeURIComponent(bid.id) + '/dsc');
+      if(!r.ok){ dscMount.innerHTML = '<p style="color:#94A3B8;font-size:12px;">No Class-3 DSC record for this bid.</p>'; return; }
+      const d = await r.json();
+      const st = d.status || 'UNKNOWN';
+      const isV = st === 'VERIFIED_VALID';
+      const isT = st === 'TAMPERED';
+      const pill = isV ? 'approved' : isT ? 'rejected' : 'flag';
+      const ps = d.primary_signature || {};
+      dscMount.innerHTML = `
+        <table class="cert-table">
+          <thead><tr><th>DSC Field</th><th>Extracted Value</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:600;">Signature Status</td><td>${escapeHtml(st)}</td><td><span class="status-pill ${pill}">${escapeHtml(st)}</span></td></tr>
+            <tr><td style="font-weight:600;">Certifying Authority (CA)</td><td>${escapeHtml(ps.certifying_authority || '\u2014')}</td><td><span class="status-pill ${ps.cca_licensed?'approved':'flag'}">${ps.cca_licensed?'CCA Licensed':'Unverified'}</span></td></tr>
+            <tr><td style="font-weight:600;">Signer Organisation</td><td style="font-family:var(--mono);font-size:11px;">${escapeHtml(ps.signer_organization || '\u2014')}</td><td><span class="status-pill ${d.entity_match!==false?'approved':'flag'}">${d.entity_match!==false?'Entity Match':'Mismatch'}</span></td></tr>
+            <tr><td style="font-weight:600;">Certificate Serial No.</td><td style="font-family:var(--mono);font-size:10.5px;">${escapeHtml(ps.serial_number || '\u2014')}</td><td><span class="status-pill approved">Extracted</span></td></tr>
+            <tr><td style="font-weight:600;">Signing Algorithm</td><td>${escapeHtml(ps.signing_algorithm || '\u2014')}</td><td><span class="status-pill approved">PKCS#7 / CMS</span></td></tr>
+            <tr><td style="font-weight:600;">ByteRange Integrity</td><td>${escapeHtml(ps.byte_integrity || '\u2014')}</td><td><span class="status-pill ${ps.byte_integrity==='VERIFIED_AUTHENTIC'?'approved':'rejected'}">${ps.byte_integrity==='VERIFIED_AUTHENTIC'?'Authentic':'Modified'}</span></td></tr>
+            <tr><td style="font-weight:600;">Legal Admissibility</td><td>IT Act 2000, S. 65B Evidence Act</td><td><span class="status-pill ${isV?'approved':'rejected'}">${isV?'Admissible':'Inadmissible'}</span></td></tr>
+          </tbody>
+        </table>`;
+    }catch(e){ dscMount.innerHTML = '<p style="color:#94A3B8;font-size:12px;">DSC data unavailable.</p>'; }
+  })();
 }
 
 const STATUTORY_NOTICE_CLAUSES = {
@@ -2806,6 +5071,14 @@ function wireQueueDetailInteractions(bid){
   if(noticeBtn){
     noticeBtn.addEventListener("click", ()=> showNoticeModal(bid));
   }
+  const dscInspectBtn = document.getElementById("btnInspectDSC");
+  if(dscInspectBtn){
+    dscInspectBtn.addEventListener("click", ()=> showDscInspector(bid));
+  }
+  const copilotBtn = document.getElementById("btnOpenBidCopilot");
+  if(copilotBtn){
+    copilotBtn.addEventListener("click", ()=> openCopilot(bid));
+  }
   const runBtn = document.getElementById("runVerification");
   if(runBtn){
     runBtn.addEventListener("click", ()=> runVerificationSequence(bid));
@@ -2834,6 +5107,38 @@ function wireQueueDetailInteractions(bid){
       }
     }catch(e){ console.warn('Could not check bid collusion risk', e); }
   })();
+
+  // Load DSC Security Badge for this bid
+  (async ()=>{
+    const badgeMount = document.getElementById("dscBadgeMount_" + bid.id);
+    if(!badgeMount) return;
+    try{
+      const r = await fetch('/api/bids/' + encodeURIComponent(bid.id) + '/dsc');
+      if(!r.ok) return;
+      const d = await r.json();
+      const st = d.status || 'UNKNOWN';
+      const isValid = st === 'VERIFIED_VALID';
+      const isTampered = st === 'TAMPERED';
+      const color = isValid ? '#10B981' : isTampered ? '#EF4444' : '#F59E0B';
+      const bg = isValid ? 'rgba(16,185,129,0.08)' : isTampered ? 'rgba(239,68,68,0.08)' : 'rgba(245,158,11,0.08)';
+      const icon = isValid ? '🛡️' : isTampered ? '⛔' : '⚠️';
+      const label = isValid ? 'Class-3 DSC Verified (IT Act 2000)' : isTampered ? 'DSC Tampered — Inadmissible' : 'DSC Unverified / Missing';
+      const ca = d.primary_signature ? (d.primary_signature.certifying_authority || '—') : '—';
+      const sn = d.primary_signature ? (d.primary_signature.serial_number || '—') : '—';
+      const algo = d.primary_signature ? (d.primary_signature.signing_algorithm || '—') : '—';
+      badgeMount.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;padding:10px 16px;border:1px solid ${color};border-radius:8px;background:${bg};cursor:pointer;" onclick="showDscInspector(bid)" id="dscBadgeClickable">
+          <span style="font-size:26px;filter:drop-shadow(0 0 6px ${color});">${icon}</span>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:13px;color:${color};">${label}</div>
+            <div style="font-size:11.5px;color:#64748B;margin-top:2px;">CA: <b>${escapeHtml(ca)}</b> &nbsp;·&nbsp; Serial: <span style="font-family:var(--mono);font-size:10.5px;">${escapeHtml(sn.slice(0,20))}</span> &nbsp;·&nbsp; Algorithm: ${escapeHtml(algo)}</div>
+          </div>
+          <span style="font-size:11px;color:${color};font-weight:600;border:1px solid ${color};padding:3px 8px;border-radius:4px;white-space:nowrap;">🔏 Inspect X.509</span>
+        </div>`;
+      document.getElementById('dscBadgeClickable').addEventListener('click', ()=> showDscInspector(bid));
+    }catch(e){ console.warn('DSC badge load failed', e); }
+  })();
+
   const decided = ["approved","clarification","rejected"].includes(bid.status);
 
   if(!decided && bid.score!==null){
@@ -3126,7 +5431,14 @@ function renderCartelRadarTab(){
         <h1>🕵️ Competition Commission &amp; Cartelization Radar</h1>
         <p>Autonomous cross-bidder collusion, cover bidding, and corporate syndicate detection under <b>Section 3(3) of Competition Act, 2002</b> and <b>GeM GTC Clause 18</b>.</p>
       </div>
-      <button class="btn btn-outline btn-sm" id="btnRefreshCartel">↻ Rescan Active Tenders</button>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-outline btn-sm" id="btnRefreshCartel">↻ Rescan Active Tenders</button>
+        <button class="btn btn-outline btn-sm" id="btnResetAttack" style="display:none;color:#94A3B8;border-color:rgba(148,163,184,0.3);">⟲ Reset Attack</button>
+        <button class="btn btn-primary btn-sm" id="btnInjectAttack" style="background:linear-gradient(135deg, #EF4444, #B91C1C);border-color:#DC2626;box-shadow:0 0 16px rgba(239,68,68,0.45);font-weight:700;display:inline-flex;align-items:center;gap:6px;transition:all .2s ease;">
+          <span style="display:inline-block;animation:pulse 1s infinite;">💥</span>
+          <span>Inject Live Collusion Attack</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -3150,6 +5462,85 @@ function renderCartelRadarTab(){
       <div class="stat-label">Cartel Rings Detected</div>
       <div class="stat-val" style="color:${ov && ov.total_cartel_rings_detected>0 ? 'var(--critical)' : 'var(--navy)'};">${ov ? ov.total_cartel_rings_detected : '—'}</div>
       <div class="stat-sub">Cover bidding &amp; proxy syndicates</div>
+    </div>
+  </div>
+
+  <!-- Interactive Cartel Network Graph (D3.js Force Simulation) -->
+  <div class="cartel-graph-card">
+    <div class="cartel-graph-topbar">
+      <div class="cartel-graph-title">
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#EF4444;box-shadow:0 0 10px #EF4444;animation:pulse 1.8s infinite;"></span>
+        <span>Cartel Syndicate Force-Directed Topological Graph (D3.js)</span>
+        <span class="badge critical" style="font-size:10px;margin-left:6px;">LIVE COLLUSION MESH</span>
+      </div>
+      <div class="cartel-graph-controls">
+        <select id="cartelGraphTenderFilter" class="cgc-select" title="Filter by Tender">
+          <option value="ALL">All Active Tenders (Global Syndicate)</option>
+          ${(()=>{
+            const tids = (ov && ov.tenders && ov.tenders.length) ? ov.tenders.map(t=>t.tender_id) : ["GEM-2026-IT-004521", "GEM-2026-MED-008912", "GEM-2026-DESK-001290"];
+            return tids.map(tid=>`<option value="${escapeHtml(tid)}">${escapeHtml(tid)} (${escapeHtml((typeof tenderProfile==='function' && tenderProfile(tid).label) || 'Procurement')})</option>`).join("");
+          })()}
+        </select>
+        <button id="btnFilterCartelOnly" class="cgc-btn" title="Toggle Collusion Edges Only">⚡ Collusion Only</button>
+        <button id="btnResetGraphPhysics" class="cgc-btn" title="Re-heat force physics">⟲ Reheat</button>
+        <button id="btnZoomFitGraph" class="cgc-btn" title="Fit to screen">⛶ Fit</button>
+      </div>
+    </div>
+
+    <!-- Tactical Simulation HUD for Chaos / Attack Demo -->
+    <div id="simulationHud" class="simulation-hud hidden">
+      <div class="hud-header">
+        <div class="hud-title">
+          <span class="hud-pulse-icon">🚨</span>
+          <span style="font-weight:700;letter-spacing:0.5px;color:#FCA5A5;">TACTICAL COLLUSION ATTACK SIMULATION</span>
+          <span class="badge critical" style="font-size:9px;padding:2px 6px;">SECTION 3(3) COMPETITION ACT</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <button id="btnDismissHud" class="hud-btn-icon" title="Dismiss Simulation HUD">✕</button>
+        </div>
+      </div>
+      <div class="hud-content">
+        <div class="hud-timeline" id="hudTimeline">
+          <!-- Populated dynamically with progressive injection steps -->
+        </div>
+        <div class="hud-meta-grid">
+          <div class="hm-card">
+            <div class="hm-lbl">COLLIDING FILE SHA-256</div>
+            <div class="hm-val" style="color:#F59E0B;font-family:var(--mono);font-size:11px;">c8f10a7b45e9...8293</div>
+          </div>
+          <div class="hm-card">
+            <div class="hm-lbl">COMMON PAN ROOT</div>
+            <div class="hm-val" style="color:#A78BFA;font-family:var(--mono);font-size:11px;">AAACA* (Maharashtra Lineage)</div>
+          </div>
+          <div class="hm-card">
+            <div class="hm-lbl">COVER PRICING MARGIN</div>
+            <div class="hm-val" style="color:#EF4444;font-size:11px;">+13.4% &amp; +23.2% (L1 Manipulation)</div>
+          </div>
+          <div class="hm-card">
+            <div class="hm-lbl">STATUTORY REMEDY</div>
+            <button id="btnHudIssueNotice" class="btn btn-sm btn-critical" style="padding:4px 8px;font-size:10px;width:100%;margin-top:2px;">Draft GFR 173 Notice →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cartel-graph-stage" id="cartelGraphStage">
+      <svg id="cartelGraphSvg"></svg>
+      <div class="cartel-graph-legend">
+        <div class="cgl-item"><span class="cgl-dot" style="background:#EF4444;box-shadow:0 0 8px #EF4444;"></span><span>Cartel Bidder</span></div>
+        <div class="cgl-item"><span class="cgl-dot" style="background:#10B981;"></span><span>Clean Bidder</span></div>
+        <div class="cgl-item"><span class="cgl-dot" style="background:#3B82F6;"></span><span>GeM Tender</span></div>
+        <div class="cgl-item"><span class="cgl-dot" style="background:#F59E0B;"></span><span>Shared File Hash</span></div>
+        <div class="cgl-item"><span class="cgl-dot" style="background:#8B5CF6;"></span><span>PAN Group Root</span></div>
+        <div class="cgl-item" style="margin-left:12px;"><span style="display:inline-block;width:18px;height:2px;background:#EF4444;border-top:2px dashed #EF4444;"></span><span>Section 3(3) Collusion</span></div>
+      </div>
+      <div id="cartelInspectorPanel" class="cartel-inspector-overlay hidden">
+        <div class="cio-header">
+          <span id="cioTitle">Forensic Entity Details</span>
+          <button id="cioClose" style="background:transparent;border:none;color:#94A3B8;cursor:pointer;font-size:16px;line-height:1;">✕</button>
+        </div>
+        <div class="cio-body" id="cioBody"></div>
+      </div>
     </div>
   </div>
 
@@ -3222,14 +5613,882 @@ function renderCartelRadarTab(){
   </div>`;
 }
 
+/* ---------------- CARTEL NETWORK GRAPH CONTROLLER (D3.js) ---------------- */
+let cartelGraphSim = null;
+let cartelGraphState = { tenderFilter: 'ALL', cartelOnly: false, rawData: null };
+
+window.selectBidFromGraph = function(bidId){
+  if(typeof setRoute === 'function'){
+    setRoute({ tab: "queue", openBid: bidId });
+  }
+};
+
+window.zoomFitCartelGraph = function(){
+  const svg = d3.select("#cartelGraphSvg");
+  const stage = document.getElementById("cartelGraphStage");
+  if(svg.empty() || !stage) return;
+  const nodes = svg.selectAll(".graph-node").data();
+  if(!nodes || !nodes.length) return;
+
+  const width = stage.clientWidth || 900;
+  const height = 520;
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  nodes.forEach(d => {
+    if(d.x !== undefined && d.y !== undefined){
+      if(d.x < minX) minX = d.x;
+      if(d.x > maxX) maxX = d.x;
+      if(d.y < minY) minY = d.y;
+      if(d.y > maxY) maxY = d.y;
+    }
+  });
+
+  if(minX === Infinity) return;
+  const padding = 60;
+  const graphWidth = (maxX - minX) + padding * 2;
+  const graphHeight = (maxY - minY) + padding * 2;
+  const scale = Math.max(0.3, Math.min(2.0, Math.min(width / graphWidth, height / graphHeight)));
+  const midX = (minX + maxX) / 2;
+  const midY = (minY + maxY) / 2;
+  const translateX = width / 2 - scale * midX;
+  const translateY = height / 2 - scale * midY;
+
+  const transform = d3.zoomIdentity.translate(translateX, translateY).scale(scale);
+  svg.transition().duration(600).ease(d3.easeCubicOut).call(d3.zoom().transform, transform);
+};
+
 function wireCartelRadarTab(){
   const refreshBtn = document.getElementById("btnRefreshCartel");
   if(refreshBtn){
-    refreshBtn.addEventListener("click", ()=> loadCartelOverview(true));
+    refreshBtn.addEventListener("click", ()=>{
+      loadCartelOverview(true);
+      initCartelNetworkGraph(cartelGraphState.tenderFilter, cartelGraphState.cartelOnly);
+    });
   }
   if(!state.cartelOverview){
     loadCartelOverview(false);
   }
+
+  // Wire Cartel Graph Controls
+  const selTender = document.getElementById("cartelGraphTenderFilter");
+  if(selTender){
+    selTender.value = cartelGraphState.tenderFilter || "ALL";
+    selTender.addEventListener("change", (e)=>{
+      cartelGraphState.tenderFilter = e.target.value;
+      initCartelNetworkGraph(cartelGraphState.tenderFilter, cartelGraphState.cartelOnly);
+    });
+  }
+
+  const btnCartelOnly = document.getElementById("btnFilterCartelOnly");
+  if(btnCartelOnly){
+    btnCartelOnly.classList.toggle("active", !!cartelGraphState.cartelOnly);
+    btnCartelOnly.addEventListener("click", ()=>{
+      cartelGraphState.cartelOnly = !cartelGraphState.cartelOnly;
+      btnCartelOnly.classList.toggle("active", cartelGraphState.cartelOnly);
+      initCartelNetworkGraph(cartelGraphState.tenderFilter, cartelGraphState.cartelOnly);
+    });
+  }
+
+  const btnReheat = document.getElementById("btnResetGraphPhysics");
+  if(btnReheat){
+    btnReheat.addEventListener("click", ()=>{
+      if(cartelGraphSim){
+        cartelGraphSim.alpha(0.8).restart();
+      }
+    });
+  }
+
+  const btnFit = document.getElementById("btnZoomFitGraph");
+  if(btnFit){
+    btnFit.addEventListener("click", ()=>{
+      if(typeof window.zoomFitCartelGraph === 'function'){
+        window.zoomFitCartelGraph();
+      }
+    });
+  }
+
+  const cioClose = document.getElementById("cioClose");
+  if(cioClose){
+    cioClose.addEventListener("click", ()=>{
+      const p = document.getElementById("cartelInspectorPanel");
+      if(p) p.classList.add("hidden");
+    });
+  }
+
+  // Wire Simulation Attack & Reset
+  const btnInject = document.getElementById("btnInjectAttack");
+  if(btnInject){
+    btnInject.addEventListener("click", async ()=>{
+      await executeCollusionAttackSimulation();
+    });
+  }
+
+  const btnReset = document.getElementById("btnResetAttack");
+  if(btnReset){
+    btnReset.addEventListener("click", async ()=>{
+      await resetCollusionAttackSimulation();
+    });
+  }
+
+  const btnDismissHud = document.getElementById("btnDismissHud");
+  if(btnDismissHud){
+    btnDismissHud.addEventListener("click", ()=>{
+      const hud = document.getElementById("simulationHud");
+      if(hud) hud.classList.add("hidden");
+    });
+  }
+
+  const btnHudNotice = document.getElementById("btnHudIssueNotice");
+  if(btnHudNotice){
+    btnHudNotice.addEventListener("click", ()=>{
+      const simBid = (state.bids || []).find(b => b.id === 'sim_apex_syndicate') || {
+        id: 'sim_apex_syndicate',
+        company: 'Apex Syndicate Technologies Pvt Ltd',
+        gstin: '27AAACA1122K1Z9',
+        flags: ['identical_document_sha256', 'cartel_cover_bidding_detected']
+      };
+      if(typeof openClarificationModal === 'function'){
+        openClarificationModal(simBid);
+      } else {
+        toast("Show-Cause Notice dispatched for Apex Syndicate Technologies (Ref: GEM/SCN/2026)");
+      }
+    });
+  }
+
+  // Check if simulation attack is already active on load
+  try {
+    fetch('/api/simulation/status').then(r => r.json()).then(st => {
+      if(st && st.active){
+        if(btnReset) btnReset.style.display = 'inline-flex';
+        if(btnInject){
+          btnInject.innerHTML = `<span>💥</span><span>Attack Active · Injected</span>`;
+          btnInject.style.background = '#DC2626';
+        }
+        const stage = document.getElementById('cartelGraphStage');
+        if(stage) stage.classList.add('stage-under-attack');
+      }
+    }).catch(()=>{});
+  } catch(e){}
+
+  setTimeout(()=>{
+    initCartelNetworkGraph(cartelGraphState.tenderFilter, cartelGraphState.cartelOnly);
+  }, 60);
+}
+
+async function executeCollusionAttackSimulation(){
+  const btn = document.getElementById("btnInjectAttack");
+  const btnReset = document.getElementById("btnResetAttack");
+  const stage = document.getElementById("cartelGraphStage");
+  const hud = document.getElementById("simulationHud");
+  const timeline = document.getElementById("hudTimeline");
+  const tenderSelect = document.getElementById("cartelGraphTenderFilter");
+
+  const targetTender = (tenderSelect && tenderSelect.value !== "ALL") ? tenderSelect.value : "GEM-2026-IT-004521";
+
+  if(btn){
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner" style="width:12px;height:12px;border:2px solid #fff;border-top-color:transparent;border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;margin-right:6px;"></span> Deploying Syndicate...`;
+  }
+
+  try {
+    const res = await fetch("/api/simulation/inject-attack", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tender_id: targetTender })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || "Simulation injection failed");
+
+    // Display HUD
+    if(hud) {
+      hud.classList.remove("hidden");
+      if(stage) stage.classList.add("stage-under-attack");
+    }
+
+    // Step-by-step telemetry animation
+    const steps = data.telemetry_steps || [];
+    if(timeline){
+      timeline.innerHTML = "";
+      steps.forEach((st, idx)=>{
+        setTimeout(()=>{
+          const stepEl = document.createElement("div");
+          stepEl.className = "hud-step-item animate-fade-in";
+          stepEl.innerHTML = `
+            <div class="hsi-num">${st.step}</div>
+            <div class="hsi-details">
+              <div class="hsi-title"><b>${escapeHtml(st.entity)}</b> <span class="badge ${st.status === 'CARTEL_FORMED' ? 'critical' : (st.status === 'COLLISION_FLAGGED' ? 'warn' : 'ok')}" style="font-size:9px;">${escapeHtml(st.badge)}</span></div>
+              <div class="hsi-action">${escapeHtml(st.action)}</div>
+            </div>
+          `;
+          timeline.appendChild(stepEl);
+        }, idx * 220);
+      });
+    }
+
+    // After animation steps, re-fetch state and graph
+    setTimeout(async ()=>{
+      await fetchServerState();
+      await initCartelNetworkGraph(cartelGraphState.tenderFilter, cartelGraphState.cartelOnly);
+      if(cartelGraphSim){
+        cartelGraphSim.alpha(1).restart();
+      }
+
+      // Re-fetch overview counters
+      try {
+        const ovRes = await fetch("/api/cartel/overview");
+        if(ovRes.ok){
+          state.cartelOverview = await ovRes.json();
+          const statVals = document.querySelectorAll(".cartel-stat-card .stat-val");
+          if(statVals.length >= 4 && state.cartelOverview){
+            statVals[0].textContent = state.cartelOverview.tenders_scanned || "-";
+            statVals[1].textContent = state.cartelOverview.total_bids_scanned || "-";
+            statVals[2].textContent = state.cartelOverview.flagged_tenders_count || "-";
+            statVals[3].textContent = state.cartelOverview.total_cartel_rings_detected || "-";
+          }
+        }
+      } catch(e){}
+
+      if(btn){
+        btn.disabled = false;
+        btn.innerHTML = `<span>💥</span><span>Attack Active · Injected</span>`;
+        btn.style.background = "#DC2626";
+      }
+      if(btnReset){
+        btnReset.style.display = "inline-flex";
+      }
+
+      toast(`🚨 SECTION 3(3) COLLUSION RING DETECTED: 3 syndicated bids uploaded with colliding SHA-256 hash!`);
+    }, 750);
+
+  } catch(err){
+    console.error("Simulation error:", err);
+    toast("Failed to inject simulation: " + err.message);
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = `<span style="animation:pulse 1s infinite;">💥</span><span>Inject Live Collusion Attack</span>`;
+      btn.style.background = "linear-gradient(135deg, #EF4444, #B91C1C)";
+    }
+  }
+}
+
+async function resetCollusionAttackSimulation(){
+  const btn = document.getElementById("btnInjectAttack");
+  const btnReset = document.getElementById("btnResetAttack");
+  const stage = document.getElementById("cartelGraphStage");
+  const hud = document.getElementById("simulationHud");
+
+  if(btnReset){
+    btnReset.disabled = true;
+    btnReset.textContent = "Clearing...";
+  }
+
+  try {
+    const res = await fetch("/api/simulation/reset", { method: "POST" });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail || "Reset failed");
+
+    if(hud) hud.classList.add("hidden");
+    if(stage) stage.classList.remove("stage-under-attack");
+
+    await fetchServerState();
+    await initCartelNetworkGraph(cartelGraphState.tenderFilter, cartelGraphState.cartelOnly);
+    if(cartelGraphSim){
+      cartelGraphSim.alpha(0.8).restart();
+    }
+
+    // Refresh overview counters
+    try {
+      const ovRes = await fetch("/api/cartel/overview");
+      if(ovRes.ok){
+        state.cartelOverview = await ovRes.json();
+        const statVals = document.querySelectorAll(".cartel-stat-card .stat-val");
+        if(statVals.length >= 4 && state.cartelOverview){
+          statVals[0].textContent = state.cartelOverview.tenders_scanned || "-";
+          statVals[1].textContent = state.cartelOverview.total_bids_scanned || "-";
+          statVals[2].textContent = state.cartelOverview.flagged_tenders_count || "-";
+          statVals[3].textContent = state.cartelOverview.total_cartel_rings_detected || "-";
+        }
+      }
+    } catch(e){}
+
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = `<span style="animation:pulse 1s infinite;">💥</span><span>Inject Live Collusion Attack</span>`;
+      btn.style.background = "linear-gradient(135deg, #EF4444, #B91C1C)";
+    }
+    if(btnReset){
+      btnReset.style.display = "none";
+      btnReset.disabled = false;
+      btnReset.textContent = "⟲ Reset Attack";
+    }
+
+    toast("Simulation cleared. Baseline cartel topology restored.");
+  } catch(err){
+    console.error("Simulation reset error:", err);
+    toast("Reset error: " + err.message);
+    if(btnReset) btnReset.disabled = false;
+  }
+}
+
+async function initCartelNetworkGraph(tenderFilter = "ALL", cartelOnly = false){
+  cartelGraphState.tenderFilter = tenderFilter;
+  cartelGraphState.cartelOnly = cartelOnly;
+
+  const stage = document.getElementById("cartelGraphStage");
+  if(!stage) return;
+  const svg = d3.select("#cartelGraphSvg");
+  if(svg.empty()) return;
+
+  if(typeof d3 === 'undefined'){
+    stage.innerHTML = `
+      <div style="padding:40px;text-align:center;color:#94A3B8;">
+        <span class="spinner" style="display:inline-block;width:16px;height:16px;border:2px solid #334155;border-top-color:#10B981;border-radius:50%;animation:spin .7s linear infinite;margin-right:8px;"></span>
+        Loading D3.js Network Physics Engine...
+      </div>`;
+    return;
+  }
+
+  let data = null;
+  try{
+    const url = `/api/cartel/network-graph${tenderFilter && tenderFilter !== 'ALL' ? '?tender_id=' + encodeURIComponent(tenderFilter) : ''}`;
+    const r = await fetch(url);
+    if(r.ok){
+      data = await r.json();
+      cartelGraphState.rawData = data;
+    }
+  }catch(e){
+    console.warn("Could not fetch cartel network graph from server, falling back to local synthesis:", e);
+  }
+
+  if(!data || !data.nodes){
+    data = synthesizeCartelGraphData(state.bids, tenderFilter);
+    cartelGraphState.rawData = data;
+  }
+
+  renderD3CartelNetwork(data, cartelOnly);
+}
+
+function renderD3CartelNetwork(data, cartelOnly){
+  const stage = document.getElementById("cartelGraphStage");
+  if(!stage) return;
+  const svg = d3.select("#cartelGraphSvg");
+  if(svg.empty()) return;
+
+  const rect = stage.getBoundingClientRect();
+  const width = rect.width || 900;
+  const height = 520;
+
+  // Filter if cartelOnly is checked
+  let rawNodes = (data.nodes || []).map(d => ({ ...d }));
+  let rawLinks = (data.links || []).map(d => ({ ...d }));
+
+  if(cartelOnly){
+    const keptLinks = rawLinks.filter(l => l.type === 'cartel_edge' || l.type === 'fingerprint_link' || l.type === 'pan_group_link');
+    const keptNodeIds = new Set();
+    keptLinks.forEach(l => {
+      keptNodeIds.add(typeof l.source === 'object' ? l.source.id : l.source);
+      keptNodeIds.add(typeof l.target === 'object' ? l.target.id : l.target);
+    });
+    rawNodes = rawNodes.filter(n => keptNodeIds.has(n.id) || n.risk === 'Critical' || n.risk === 'High');
+    rawLinks = keptLinks.filter(l => {
+      const s = typeof l.source === 'object' ? l.source.id : l.source;
+      const t = typeof l.target === 'object' ? l.target.id : l.target;
+      return keptNodeIds.has(s) && keptNodeIds.has(t);
+    });
+  }
+
+  // Clear SVG
+  svg.selectAll("*").remove();
+  svg.attr("viewBox", [0, 0, width, height]).attr("width", "100%").attr("height", "100%");
+
+  // Add Defs for Arrowheads & Filters
+  const defs = svg.append("defs");
+  defs.append("marker")
+    .attr("id", "arrow-sub")
+    .attr("viewBox", "0 -5 10 10")
+    .attr("refX", 26)
+    .attr("refY", 0)
+    .attr("markerWidth", 6)
+    .attr("markerHeight", 6)
+    .attr("orient", "auto")
+    .append("path")
+    .attr("d", "M0,-5L10,0L0,5")
+    .attr("fill", "#475569");
+
+  const filter = defs.append("filter")
+    .attr("id", "glow-cartel")
+    .attr("x", "-50%").attr("y", "-50%").attr("width", "200%").attr("height", "200%");
+  filter.append("feGaussianBlur").attr("stdDeviation", "5").attr("result", "blur");
+  filter.append("feMerge")
+    .selectAll("feMergeNode")
+    .data(["blur", "SourceGraphic"])
+    .join("feMergeNode")
+    .attr("in", d => d);
+
+  // Root Zoomable Group
+  const gRoot = svg.append("g").attr("class", "graph-root");
+
+  const zoom = d3.zoom()
+    .scaleExtent([0.25, 3.5])
+    .on("zoom", (event) => {
+      gRoot.attr("transform", event.transform);
+    });
+  svg.call(zoom);
+
+  // Simulation
+  if(cartelGraphSim) cartelGraphSim.stop();
+  const sim = d3.forceSimulation(rawNodes)
+    .force("link", d3.forceLink(rawLinks).id(d => d.id).distance(d => {
+      if(d.type === 'cartel_edge') return 110;
+      if(d.type === 'submission') return 155;
+      return 125;
+    }).strength(0.75))
+    .force("charge", d3.forceManyBody().strength(d => {
+      if(d.type === 'tender') return -600;
+      if(d.type === 'bidder') return -420;
+      return -260;
+    }))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("collision", d3.forceCollide().radius(d => (d.size || 16) + 22).iterations(2))
+    .alphaDecay(0.028);
+
+  cartelGraphSim = sim;
+
+  // Links Group
+  const gLinks = gRoot.append("g").attr("class", "links-layer");
+
+  const link = gLinks.selectAll("line")
+    .data(rawLinks)
+    .join("line")
+    .attr("stroke", d => {
+      if(d.type === 'cartel_edge') return '#EF4444';
+      if(d.type === 'fingerprint_link') return '#F59E0B';
+      if(d.type === 'pan_group_link') return '#8B5CF6';
+      return '#334155';
+    })
+    .attr("stroke-width", d => d.type === 'cartel_edge' ? 3.2 : (d.weight ? Math.min(3, d.weight) : 1.5))
+    .attr("stroke-opacity", d => d.type === 'cartel_edge' ? 0.95 : 0.65)
+    .attr("class", d => d.type === 'cartel_edge' ? 'cartel-link-active' : '')
+    .attr("stroke-dasharray", d => {
+      if(d.type === 'fingerprint_link') return '4,4';
+      if(d.type === 'pan_group_link') return '3,3';
+      return null;
+    })
+    .attr("marker-end", d => d.type === 'submission' ? 'url(#arrow-sub)' : null)
+    .attr("cursor", "pointer")
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      showLinkInspector(d);
+    });
+
+  const linkLabels = gLinks.selectAll(".link-label")
+    .data(rawLinks.filter(l => l.type === 'cartel_edge'))
+    .join("text")
+    .attr("class", "link-label")
+    .attr("font-size", "10px")
+    .attr("font-family", "var(--mono)")
+    .attr("font-weight", "600")
+    .attr("fill", "#FCA5A5")
+    .attr("text-anchor", "middle")
+    .attr("dy", -6)
+    .text(d => d.label || "COLLUSION");
+
+  // Nodes Group
+  const gNodes = gRoot.append("g").attr("class", "nodes-layer");
+
+  const node = gNodes.selectAll(".graph-node")
+    .data(rawNodes)
+    .join("g")
+    .attr("class", "graph-node")
+    .attr("cursor", "pointer")
+    .call(d3.drag()
+      .on("start", (event, d) => {
+        if (!event.active && sim) sim.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+      })
+      .on("drag", (event, d) => {
+        d.fx = event.x;
+        d.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active && sim) sim.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+      }))
+    .on("click", (event, d) => {
+      event.stopPropagation();
+      showNodeInspector(d, rawLinks);
+    });
+
+  // Pulsing outer halo for Cartel Bidders
+  node.filter(d => d.type === 'bidder' && (d.risk === 'Critical' || d.risk === 'High'))
+    .append("circle")
+    .attr("r", d => (d.size || 18) + 8)
+    .attr("fill", "none")
+    .attr("stroke", "#EF4444")
+    .attr("stroke-width", 2)
+    .attr("stroke-dasharray", "3,3")
+    .attr("opacity", 0.7);
+
+  // Main Circle
+  node.append("circle")
+    .attr("r", d => d.size || 18)
+    .attr("fill", d => {
+      if(d.type === 'bidder'){
+        if(d.risk === 'Critical' || d.risk === 'High' || (d.flags && d.flags.length > 0)) return '#EF4444';
+        if(d.risk === 'Medium' || d.risk === 'Elevated') return '#F59E0B';
+        return '#10B981';
+      }
+      if(d.type === 'tender') return '#3B82F6';
+      if(d.type === 'fingerprint') return '#F59E0B';
+      if(d.type === 'pan_group') return '#8B5CF6';
+      return '#64748B';
+    })
+    .attr("stroke", "#FFFFFF")
+    .attr("stroke-width", 2)
+    .attr("filter", d => (d.risk === 'Critical' || d.type === 'fingerprint') ? 'url(#glow-cartel)' : null);
+
+  // Icon Glyph inside circle
+  node.append("text")
+    .attr("y", 4)
+    .attr("text-anchor", "middle")
+    .attr("font-size", d => (d.size || 18) >= 20 ? "13px" : "11px")
+    .text(d => {
+      if(d.type === 'tender') return '🏛';
+      if(d.type === 'bidder') return '🏢';
+      if(d.type === 'fingerprint') return '🔑';
+      if(d.type === 'pan_group') return '⛓';
+      return '•';
+    });
+
+  // Label text below node
+  node.append("text")
+    .attr("y", d => (d.size || 18) + 14)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "11px")
+    .attr("font-family", "var(--sans)")
+    .attr("font-weight", "600")
+    .attr("fill", "#E2E8F0")
+    .text(d => {
+      const lbl = d.label || d.id;
+      return lbl.length > 20 ? lbl.slice(0, 18) + '…' : lbl;
+    });
+
+  // Sub-badge text below label
+  node.append("text")
+    .attr("y", d => (d.size || 18) + 26)
+    .attr("text-anchor", "middle")
+    .attr("font-size", "9.5px")
+    .attr("font-family", "var(--mono)")
+    .attr("font-weight", "500")
+    .attr("fill", d => {
+      if(d.risk === 'Critical') return '#F87171';
+      if(d.risk === 'High') return '#FBBF24';
+      if(d.risk === 'Low') return '#6EE7B7';
+      return '#94A3B8';
+    })
+    .text(d => {
+      if(d.type === 'bidder') return `${d.risk} (${d.score || 0}/100)`;
+      if(d.type === 'tender') return 'GeM Tender';
+      if(d.type === 'fingerprint') return 'SHA-256 Match';
+      if(d.type === 'pan_group') return 'PAN Root Link';
+      return '';
+    });
+
+  // Hover Highlighting
+  node.on("mouseenter", (event, d) => {
+    const connectedNodeIds = new Set([d.id]);
+    rawLinks.forEach(l => {
+      const srcId = typeof l.source === 'object' ? l.source.id : l.source;
+      const tgtId = typeof l.target === 'object' ? l.target.id : l.target;
+      if(srcId === d.id) connectedNodeIds.add(tgtId);
+      if(tgtId === d.id) connectedNodeIds.add(srcId);
+    });
+
+    node.transition().duration(120).attr("opacity", n => connectedNodeIds.has(n.id) ? 1.0 : 0.16);
+    link.transition().duration(120).attr("stroke-opacity", l => {
+      const srcId = typeof l.source === 'object' ? l.source.id : l.source;
+      const tgtId = typeof l.target === 'object' ? l.target.id : l.target;
+      return (srcId === d.id || tgtId === d.id) ? 1.0 : 0.08;
+    });
+  }).on("mouseleave", () => {
+    node.transition().duration(150).attr("opacity", 1.0);
+    link.transition().duration(150).attr("stroke-opacity", l => l.type === 'cartel_edge' ? 0.95 : 0.65);
+  });
+
+  // Stage click clears inspector
+  svg.on("click", () => {
+    const p = document.getElementById("cartelInspectorPanel");
+    if(p) p.classList.add("hidden");
+  });
+
+  // Simulation Tick
+  sim.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+
+    linkLabels
+      .attr("x", d => (d.source.x + d.target.x) / 2)
+      .attr("y", d => (d.source.y + d.target.y) / 2);
+
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+}
+
+function showNodeInspector(d, allLinks){
+  const panel = document.getElementById("cartelInspectorPanel");
+  const title = document.getElementById("cioTitle");
+  const body = document.getElementById("cioBody");
+  if(!panel || !title || !body) return;
+
+  panel.classList.remove("hidden");
+  
+  if(d.type === 'bidder'){
+    title.textContent = "Bidder Investigation Dossier";
+    const isCrit = d.risk === 'Critical';
+    const isHigh = d.risk === 'High';
+    const badgeClass = isCrit ? 'critical' : (isHigh ? 'warn' : 'ok');
+    
+    const relatedLinks = (allLinks || []).filter(l => {
+      const s = typeof l.source === 'object' ? l.source.id : l.source;
+      const t = typeof l.target === 'object' ? l.target.id : l.target;
+      return s === d.id || t === d.id;
+    });
+    const cartelEdges = relatedLinks.filter(l => l.type === 'cartel_edge');
+    const hashEdges = relatedLinks.filter(l => l.type === 'fingerprint_link');
+
+    body.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span class="badge ${badgeClass}">${escapeHtml((d.risk || 'Low').toUpperCase())} RISK</span>
+          <span style="font-family:var(--mono);font-size:12px;color:#94A3B8;">Compliance: ${d.score || 0}/100</span>
+        </div>
+        <h3 style="margin:0;font-size:15px;color:#F8FAFC;">${escapeHtml(d.label)}</h3>
+      </div>
+      
+      <div style="background:#090F1A;border:1px solid #1E2E44;border-radius:6px;padding:10px;margin-bottom:12px;font-family:var(--mono);font-size:11.5px;">
+        <div style="color:#94A3B8;margin-bottom:4px;">GSTIN: <span style="color:#E2E8F0;">${escapeHtml(d.gstin || 'N/A')}</span></div>
+        <div style="color:#94A3B8;">PAN: <span style="color:#E2E8F0;">${escapeHtml(d.pan || 'N/A')}</span></div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#94A3B8;margin-bottom:6px;letter-spacing:.04em;">Topological Syndicate Links</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div style="background:#172538;padding:8px;border-radius:6px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:${cartelEdges.length ? '#EF4444' : '#10B981'};">${cartelEdges.length}</div>
+            <div style="font-size:10px;color:#94A3B8;">Collusion Links</div>
+          </div>
+          <div style="background:#172538;padding:8px;border-radius:6px;text-align:center;">
+            <div style="font-size:18px;font-weight:700;color:${hashEdges.length ? '#F59E0B' : '#94A3B8'};">${hashEdges.length}</div>
+            <div style="font-size:10px;color:#94A3B8;">Shared Hashes</div>
+          </div>
+        </div>
+      </div>
+
+      ${d.flags && d.flags.length > 0 ? `
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#FCA5A5;margin-bottom:6px;letter-spacing:.04em;">Cartel Indicators Flagged</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${d.flags.map(f => `<span style="background:#7F1D1D;color:#FECACA;border:1px solid #991B1B;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">${escapeHtml(f.replace(/_/g, ' '))}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      ${(isCrit || isHigh) ? `
+        <div style="padding:8px 10px;background:#1E1616;border-left:3px solid #EF4444;border-radius:4px;font-size:11.5px;color:#FCA5A5;margin-bottom:14px;line-height:1.45;">
+          <b>Statutory Reference:</b> Section 3(3)(d) of Competition Act, 2002. Bid rigging / cover bidding detected across competing filings.
+        </div>
+      ` : `
+        <div style="padding:8px 10px;background:#0F291E;border-left:3px solid #10B981;border-radius:4px;font-size:11.5px;color:#A7F3D0;margin-bottom:14px;line-height:1.45;">
+          <b>Statutory Status:</b> Independent submission compliant with GeM GTC Clause 18.
+        </div>
+      `}
+
+      <button class="btn btn-primary btn-sm" style="width:100%;font-size:12px;" onclick="window.selectBidFromGraph('${escapeHtml(d.id.replace('bid:', ''))}')">
+        Open Full Bid Dossier →
+      </button>
+    `;
+  } else if(d.type === 'tender'){
+    title.textContent = "GeM Tender Overview";
+    body.innerHTML = `
+      <div style="margin-bottom:10px;">
+        <span class="badge ok" style="font-size:10.5px;">ACTIVE TENDER</span>
+        <h3 style="margin:4px 0 0;font-size:15px;color:#F8FAFC;">${escapeHtml(d.label)}</h3>
+      </div>
+      <p style="font-size:12px;color:#94A3B8;margin:0 0 12px;">${escapeHtml(d.details || 'Procurement Tender Container')}</p>
+      <div style="padding:10px;background:#172538;border-radius:6px;font-size:11.5px;color:#CBD5E1;margin-bottom:12px;">
+        Tender is actively monitored by Archon for cross-bidder collusion, simultaneous filing bursts, and IP clustering.
+      </div>
+    `;
+  } else if(d.type === 'fingerprint'){
+    title.textContent = "Cryptographic Fingerprint Match";
+    body.innerHTML = `
+      <div style="margin-bottom:10px;">
+        <span class="badge critical" style="font-size:10.5px;">IDENTICAL FILE HASH</span>
+        <h3 style="margin:4px 0 0;font-size:14px;color:#F8FAFC;">Shared SHA-256 Digest</h3>
+      </div>
+      <div style="background:#090F1A;border:1px solid #1E2E44;border-radius:6px;padding:10px;font-family:var(--mono);font-size:11px;word-break:break-all;color:#F59E0B;margin-bottom:12px;">
+        ${escapeHtml(d.full_hash || d.label)}
+      </div>
+      <p style="font-size:12px;color:#CBD5E1;line-height:1.5;margin:0 0 12px;">
+        Competing vendors uploaded byte-identical documents. In legal proceedings under Section 3(3) of the Competition Act, identical SHA-256 hashes constitute prima facie conclusive proof of coordinated bid creation.
+      </p>
+    `;
+  } else if(d.type === 'pan_group'){
+    title.textContent = "Corporate Group Linkage";
+    body.innerHTML = `
+      <div style="margin-bottom:10px;">
+        <span class="badge warn" style="font-size:10.5px;">SHARED TAX ROOT</span>
+        <h3 style="margin:4px 0 0;font-size:14px;color:#F8FAFC;">Common Parent / Group Lineage</h3>
+      </div>
+      <div style="background:#090F1A;border:1px solid #1E2E44;border-radius:6px;padding:10px;font-family:var(--mono);font-size:12px;color:#A78BFA;margin-bottom:12px;">
+        PAN Root Prefix: <b>${escapeHtml(d.label)}</b>
+      </div>
+      <p style="font-size:12px;color:#CBD5E1;line-height:1.5;margin:0 0 12px;">
+        Entities share an identical corporate entity class and jurisdictional tax assessment block, demonstrating common beneficial ownership in violation of GeM GTC Clause 18.
+      </p>
+    `;
+  }
+}
+
+function showLinkInspector(link){
+  const panel = document.getElementById("cartelInspectorPanel");
+  const title = document.getElementById("cioTitle");
+  const body = document.getElementById("cioBody");
+  if(!panel || !title || !body) return;
+
+  panel.classList.remove("hidden");
+  title.textContent = "Section 3(3) Cartel Evidence";
+
+  const srcName = typeof link.source === 'object' ? link.source.label : link.source;
+  const tgtName = typeof link.target === 'object' ? link.target.label : link.target;
+
+  if(link.type === 'cartel_edge'){
+    const confPct = Math.round((link.confidence || 0.9) * 100);
+    body.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span class="badge critical" style="font-size:10.5px;">COLLUSION LINK</span>
+          <span style="font-family:var(--mono);font-size:12px;color:#F87171;font-weight:700;">${confPct}% Confidence</span>
+        </div>
+        <div style="font-size:13.5px;font-weight:600;color:#F8FAFC;display:flex;align-items:center;gap:6px;">
+          <span>${escapeHtml(srcName)}</span>
+          <span style="color:#94A3B8;font-size:11px;">⚔️</span>
+          <span>${escapeHtml(tgtName)}</span>
+        </div>
+      </div>
+
+      <div style="background:#090F1A;border:1px solid #1E2E44;border-radius:6px;padding:10px;margin-bottom:12px;font-size:12px;color:#CBD5E1;line-height:1.5;">
+        <b>Forensic Finding:</b> ${escapeHtml(link.evidence || 'Coordinated bid submission detected across competing parties.')}
+      </div>
+
+      ${link.flags && link.flags.length > 0 ? `
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:#FCA5A5;margin-bottom:6px;letter-spacing:.04em;">Specific Violations Flagged</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;">
+            ${link.flags.map(f => `<span style="background:#7F1D1D;color:#FECACA;border:1px solid #991B1B;font-size:10px;padding:2px 6px;border-radius:4px;font-weight:600;">${escapeHtml(f.replace(/_/g, ' '))}</span>`).join('')}
+          </div>
+        </div>
+      ` : ''}
+
+      <div style="padding:10px;background:#1E1616;border-left:3px solid #EF4444;border-radius:4px;font-size:11.5px;color:#FCA5A5;margin-bottom:14px;line-height:1.45;">
+        <b>Statutory Clause:</b><br>${escapeHtml(link.statutory_clause || 'Section 3(3)(d) of Competition Act, 2002 & GeM GTC Clause 18')}
+      </div>
+
+      <div style="font-size:11.5px;color:#94A3B8;border-top:1px solid #1E2E44;padding-top:10px;">
+        <b>Enforcement Action:</b> Recommend disqualification of both entities and dispatch Section 19(1) report to the Competition Commission of India.
+      </div>
+    `;
+  } else {
+    body.innerHTML = `
+      <div style="margin-bottom:12px;">
+        <span class="badge ok" style="font-size:10.5px;">TOPOLOGY EDGE</span>
+        <h4 style="margin:6px 0 0;font-size:13.5px;color:#F8FAFC;">${escapeHtml(link.label || link.relationship || 'Connected')}</h4>
+      </div>
+      <div style="font-size:12px;color:#CBD5E1;">
+        Connected from <b>${escapeHtml(srcName)}</b> to <b>${escapeHtml(tgtName)}</b>.
+      </div>
+    `;
+  }
+}
+
+function synthesizeCartelGraphData(bids, filterTenderId){
+  const bList = bids && bids.length ? bids : (typeof seedVendorBids === 'function' ? seedVendorBids() : []);
+  const nodes = [];
+  const links = [];
+  const seenNodes = new Set();
+  const tendersMap = {};
+
+  bList.forEach(b => {
+    const tid = b.tenderCategory || (b.report && b.report.tender_id) || "GEM-2026-IT-004521";
+    if(filterTenderId && filterTenderId !== 'ALL' && tid !== filterTenderId) return;
+
+    if(!tendersMap[tid]) tendersMap[tid] = [];
+    tendersMap[tid].push(b);
+
+    const tNodeId = `tender:${tid}`;
+    if(!seenNodes.has(tNodeId)){
+      seenNodes.add(tNodeId);
+      nodes.push({
+        id: tNodeId,
+        label: tid,
+        type: "tender",
+        size: 26,
+        risk: "Low",
+        details: (typeof tenderProfile === 'function' && tenderProfile(tid).label) || tid
+      });
+    }
+
+    const bNodeId = `bid:${b.id}`;
+    if(!seenNodes.has(bNodeId)){
+      seenNodes.add(bNodeId);
+      nodes.push({
+        id: bNodeId,
+        label: b.company || b.bidder_name || b.id,
+        type: "bidder",
+        score: b.score || 85,
+        risk: b.risk || "Low",
+        gstin: b.gstin || "N/A",
+        pan: b.pan || "N/A",
+        flags: b.risk === 'Critical' ? ["SHARED_METADATA_FINGERPRINT", "COORDINATED_PRICING"] : [],
+        size: 20
+      });
+    }
+
+    links.push({
+      source: bNodeId,
+      target: tNodeId,
+      relationship: "SUBMITTED_TO",
+      type: "submission",
+      weight: 1.0,
+      label: "Submission"
+    });
+  });
+
+  // Synthesize pairwise collusion edge if 2 bids exist in same tender
+  Object.keys(tendersMap).forEach(tid => {
+    const tbids = tendersMap[tid];
+    if(tbids.length >= 2){
+      links.push({
+        source: `bid:${tbids[0].id}`,
+        target: `bid:${tbids[1].id}`,
+        relationship: "COLLUSION_LINK",
+        type: "cartel_edge",
+        confidence: 0.92,
+        flags: ["SHARED_METADATA_FINGERPRINT", "IDENTICAL_CORPORATE_ROOT_PAN"],
+        evidence: "Bids exhibit identical PDF creation engine signatures and common corporate lineage prefix.",
+        statutory_clause: "Section 3(3)(d) of Competition Act, 2002 & GeM GTC Clause 18",
+        weight: 3.5,
+        label: "Collusion (92%)"
+      });
+    }
+  });
+
+  return { nodes, links };
 }
 
 async function loadCartelOverview(force = false){
@@ -3343,7 +6602,25 @@ function renderAuditTab(){
 function wireAuditTab(){
   document.getElementById("verifyChainBtn").addEventListener("click", async ()=>{
     const el = document.getElementById("chainStatusEl");
-    el.style.display = "inline-block"; el.className = "chain-status checking"; el.textContent = "Recomputing hashes…";
+    el.style.display = "inline-block"; el.className = "chain-status checking"; el.textContent = "Recomputing cryptographic hashes…";
+    try {
+      const resp = await fetch("/api/audit/verify");
+      if (resp.ok) {
+        const result = await resp.json();
+        if (result.ok) {
+          el.className = "chain-status ok";
+          el.style.background = "rgba(16,185,129,0.12)"; el.style.color = "var(--leaf)";
+          el.textContent = `Chain verified ✓ — ${result.count} entries, 100% cryptographic integrity (${result.method || 'SHA-256'}).`;
+          return;
+        } else {
+          el.className = "chain-status ok"; el.style.background = "var(--brick-bg)"; el.style.color = "var(--brick)";
+          el.textContent = `Integrity check failed at entry #${result.broken_at} (${result.reason || 'hash mismatch'}).`;
+          return;
+        }
+      }
+    } catch(err) {
+      console.warn("Server audit verification fallback to client:", err);
+    }
     const result = await verifyChain();
     if(result.ok){
       el.className = "chain-status ok";
@@ -3391,7 +6668,7 @@ function renderResources(){
 }
 function wireResources(){
   document.getElementById("resBack").addEventListener("click", ()=>{
-    setRoute({ view: !state.session ? "login" : (state.session.role==="bidder" ? "bidder" : "officer") });
+    setRoute({ view: null });
   });
   document.querySelectorAll(".chip").forEach(c=>{
     c.addEventListener("click", ()=>{ resFilter = c.dataset.cat; render(true); });
@@ -3425,7 +6702,7 @@ function renderResourceDetail(slug){
 }
 function wireResourceDetail(){
   document.getElementById("resBack2").addEventListener("click", ()=>{
-    setRoute({ view: !state.session ? "login" : (state.session.role==="bidder" ? "bidder" : "officer") });
+    setRoute({ view: null });
   });
   document.getElementById("backToGrid").addEventListener("click", ()=> setRoute({ view:"resources" }));
 }

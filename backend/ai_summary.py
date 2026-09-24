@@ -89,9 +89,21 @@ def _synthesize_statutory_summary(report: Dict[str, Any], tender_title: str) -> 
     """Deterministic Statutory NLP Synthesizer — guarantees 100% reliable, zero-latency
     high-fidelity intelligence without external API dependency."""
     score_obj = report.get("score") or {}
-    total_score = score_obj.get("total", 100)
-    risk_level = score_obj.get("risk_level", "Low")
-    flags = score_obj.get("flags") or []
+    if isinstance(score_obj, dict):
+        raw_total = score_obj.get("total", 100)
+        if isinstance(raw_total, dict):
+            raw_total = raw_total.get("total") or raw_total.get("score", 100)
+        risk_level = score_obj.get("risk_level", "Low")
+        flags = score_obj.get("flags") or []
+    else:
+        raw_total = score_obj
+        risk_level = report.get("risk_level") or "Low"
+        flags = report.get("flags") or []
+
+    try:
+        total_score = float(raw_total)
+    except Exception:
+        total_score = 100.0
     extraction = report.get("extraction") or {}
     forensics = report.get("forensics") or {}
     eligibility = report.get("eligibility") or {}

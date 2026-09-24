@@ -87,3 +87,65 @@ def test_live_verification_and_rpa_endpoints():
     assert rpa_data.get("status") == "OPERATIONAL"
     assert "rpa_engine" in rpa_data
 
+    # 3. MCA21 live scraper endpoint with resilient fallback
+    mca_resp = client.get("/api/verify/live-scraper?company=Bharat+HydraTech+Systems")
+    assert mca_resp.status_code == 200
+    assert mca_resp.json().get("company_status") == "Active"
+
+
+def test_ca_udin_validation():
+    # Valid 18-digit UDIN
+    valid_udin = "24123456AAAA123456"
+    res = verification.validate_ca_udin(valid_udin)
+    assert res["valid"] is True
+    assert res["ca_membership_number"] == "123456"
+    assert res["issuance_year"] == 2024
+
+    # Invalid lengths and formats
+    assert verification.validate_ca_udin("12345")["valid"] is False
+    assert verification.validate_ca_udin(None)["valid"] is False
+    assert verification.validate_ca_udin("15123456AAAA123456")["valid"] is False  # Year 2015 prior to ICAI system
+
+
+def test_land_border_and_emd_exemption():
+    # Domestic Indian entity
+    res_lb_domestic = verification.verify_land_border_compliance({"cin": "U72200DL2018PTC123456"})
+    assert res_lb_domestic["compliant"] is True
+    assert res_lb_domestic["dpiit_security_clearance_required"] is False
+
+    # Foreign subsidiary entity requiring security clearance
+    res_lb_foreign = verification.verify_land_border_compliance({"cin": "U72200DL2018FTC123456"})
+    assert res_lb_foreign["compliant"] is False
+    assert res_lb_foreign["dpiit_security_clearance_required"] is True
+
+    # MSE EMD exemption
+    res_emd_mse = verification.verify_emd_exemption({"udyam": "UDYAM-DL-01-0012345"})
+    assert res_emd_mse["eligible"] is True
+    assert "MSE" in res_emd_mse["basis"]
+
+    # Regular non-MSE bidder
+    res_emd_reg = verification.verify_emd_exemption({})
+    assert res_emd_reg["eligible"] is False
+
+
+def test_comparison_matrix_and_dossier_print_endpoints():
+    from fastapi.testclient import TestClient
+    from backend.main import app
+
+    client = TestClient(app)
+    # 1. Comparison Matrix for ongoing tender
+    r_mat = client.get("/api/tenders/GEM-2026-IT-004521/comparison-matrix")
+    assert r_mat.status_code == 200
+    mat_data = r_mat.json()
+    assert "matrix" in mat_data
+    assert "tender_title" in mat_data
+    assert "statutory_framework" in mat_data
+
+    # 2. Printable Dossier HTML
+    r_print = client.get("/api/bids/seed_bharat/dossier/print")
+    assert r_print.status_code == 200
+    assert "text/html" in r_print.headers.get("content-type", "")
+    assert "Section 65B" in r_print.text
+    assert "Government of India" in r_print.text
+
+

@@ -41,8 +41,8 @@ def compare_bid_pair(bid_a: Dict[str, Any], bid_b: Dict[str, Any]) -> Optional[D
     confidence_weight = 0.0
 
     # 1. Exact Duplicate File Hash
-    hash_a = bid_a.get("file_sha256") or for_a.get("file_sha256")
-    hash_b = bid_b.get("file_sha256") or for_b.get("file_sha256")
+    hash_a = bid_a.get("file_sha256") or for_a.get("file_sha256") or for_a.get("sha256")
+    hash_b = bid_b.get("file_sha256") or for_b.get("file_sha256") or for_b.get("sha256")
     if hash_a and hash_b and hash_a == hash_b:
         flags.append("IDENTICAL_DOCUMENT_SHA256")
         evidence_points.append("Both competing bids submitted identical document byte hashes (recycled document across competitors).")
@@ -277,4 +277,180 @@ def analyze_bid_collusion_risk(bid_id: str, all_bids: List[Dict[str, Any]]) -> D
         "has_collusion_risk": len(linked) > 0,
         "collusion_flags_count": len(linked),
         "linked_competitors": linked
+    }
+
+
+def build_global_cartel_network(all_bids: List[Dict[str, Any]], filter_tender_id: Optional[str] = None) -> Dict[str, Any]:
+    """Constructs a comprehensive multi-entity force-directed network graph across all bids,
+    tenders, shared document fingerprints, and corporate PAN roots for D3.js visualization."""
+    if filter_tender_id and filter_tender_id != "all":
+        bids_to_process = [
+            b for b in all_bids
+            if (b.get("tender_id") or (b.get("report") or {}).get("tender_id")) == filter_tender_id
+        ]
+    else:
+        bids_to_process = list(all_bids)
+
+    nodes = []
+    links = []
+    seen_nodes = set()
+
+    # Track hashes and PAN prefixes to identify hubs
+    hash_to_bids: Dict[str, list] = {}
+    pan_prefix_to_bids: Dict[str, list] = {}
+    tenders_map: Dict[str, list] = {}
+
+    for b in bids_to_process:
+        bid_id = str(b.get("id") or "BID-UNKNOWN")
+        rep = b.get("report") or {}
+        ext = rep.get("extraction") or {}
+        forensics = rep.get("forensics") or {}
+        tid = str(b.get("tender_id") or rep.get("tender_id") or "goods-general")
+        name = b.get("bidder_name") or b.get("company") or rep.get("bidder_name") or "Bidder"
+        score_obj = b.get("score") if isinstance(b.get("score"), dict) else rep.get("score") or {}
+        score_val = score_obj.get("total") if isinstance(score_obj, dict) else (b.get("compliance_score") or 100)
+        risk_val = b.get("risk_level") or b.get("risk") or (score_obj.get("risk_level") if isinstance(score_obj, dict) else "Low")
+        flags = list(b.get("flags") or rep.get("flags") or (score_obj.get("flags") if isinstance(score_obj, dict) else []))
+
+        # Add Tender node
+        tender_node_id = f"tender:{tid}"
+        if tender_node_id not in seen_nodes:
+            seen_nodes.add(tender_node_id)
+            nodes.append({
+                "id": tender_node_id,
+                "label": f"Tender: {tid}",
+                "name": tid,
+                "type": "tender",
+                "risk": "Neutral",
+                "size": 26,
+                "details": f"Procurement Tender ID: {tid}"
+            })
+        tenders_map.setdefault(tid, []).append(b)
+
+        # Add Bidder node
+        bid_node_id = f"bid:{bid_id}"
+        if bid_node_id not in seen_nodes:
+            seen_nodes.add(bid_node_id)
+            nodes.append({
+                "id": bid_node_id,
+                "label": name,
+                "name": name,
+                "bid_id": bid_id,
+                "tender_id": tid,
+                "type": "bidder",
+                "score": score_val,
+                "risk": risk_val.capitalize() if isinstance(risk_val, str) else "Low",
+                "gstin": b.get("gstin") or ext.get("gstin") or "N/A",
+                "pan": b.get("pan") or ext.get("pan") or "N/A",
+                "flags": flags,
+                "flags_count": len(flags),
+                "size": 18 + min(12, len(flags) * 3),
+                "details": f"{name} (Score: {score_val}/100, Risk: {risk_val})"
+            })
+
+        # Link Bidder -> Tender
+        links.append({
+            "source": bid_node_id,
+            "target": tender_node_id,
+            "relationship": "SUBMITTED_TO",
+            "type": "submission",
+            "weight": 1.0,
+            "label": "Bid Submission"
+        })
+
+        # Track SHA-256 for duplicate clustering
+        sha = b.get("file_sha256") or forensics.get("file_sha256") or forensics.get("sha256")
+        if sha and len(sha) >= 16:
+            hash_to_bids.setdefault(sha, []).append(bid_node_id)
+
+        # Track PAN prefix for group lineage clustering
+        pan = (b.get("pan") or ext.get("pan") or "").strip().upper()
+        if len(pan) >= 5:
+            prefix = pan[:4]
+            pan_prefix_to_bids.setdefault(prefix, []).append((bid_node_id, pan))
+
+    # Add Shared Fingerprint Nodes if shared across 2+ bids
+    for sha, bid_ids in hash_to_bids.items():
+        if len(bid_ids) >= 2:
+            fp_node_id = f"fingerprint:{sha[:10]}"
+            if fp_node_id not in seen_nodes:
+                seen_nodes.add(fp_node_id)
+                nodes.append({
+                    "id": fp_node_id,
+                    "label": f"Shared Hash ({sha[:8]}...)",
+                    "type": "fingerprint",
+                    "full_hash": sha,
+                    "risk": "Critical",
+                    "size": 14,
+                    "details": f"Identical SHA-256 Byte Hash ({sha}) submitted by {len(bid_ids)} competing entities."
+                })
+            for b_id in bid_ids:
+                links.append({
+                    "source": b_id,
+                    "target": fp_node_id,
+                    "relationship": "SHARED_FILE_HASH",
+                    "type": "fingerprint_link",
+                    "weight": 2.5,
+                    "label": "Identical SHA-256"
+                })
+
+    # Add Corporate PAN Group Nodes if shared across 2+ bids
+    for prefix, bid_entries in pan_prefix_to_bids.items():
+        if len(bid_entries) >= 2:
+            pan_node_id = f"pan_group:{prefix}"
+            if pan_node_id not in seen_nodes:
+                seen_nodes.add(pan_node_id)
+                nodes.append({
+                    "id": pan_node_id,
+                    "label": f"Corporate Group ({prefix}*)",
+                    "type": "pan_group",
+                    "risk": "High",
+                    "size": 14,
+                    "details": f"Common Corporate Tax Prefix ({prefix}*) shared across {len(bid_entries)} entities indicating joint holding."
+                })
+            for b_id, _ in bid_entries:
+                links.append({
+                    "source": b_id,
+                    "target": pan_node_id,
+                    "relationship": "COMMON_PAN_ROOT",
+                    "type": "pan_group_link",
+                    "weight": 2.0,
+                    "label": "Shared PAN Root"
+                })
+
+    # Add pairwise direct collusion edges between competing bids in the same tender
+    collusion_edges = 0
+    for tid, t_bids in tenders_map.items():
+        for i in range(len(t_bids)):
+            for j in range(i + 1, len(t_bids)):
+                pair_res = compare_bid_pair(t_bids[i], t_bids[j])
+                if pair_res:
+                    collusion_edges += 1
+                    id_a = f"bid:{t_bids[i].get('id')}"
+                    id_b = f"bid:{t_bids[j].get('id')}"
+                    links.append({
+                        "source": id_a,
+                        "target": id_b,
+                        "relationship": "COLLUSION_LINK",
+                        "type": "cartel_edge",
+                        "confidence": pair_res["confidence"],
+                        "flags": pair_res["flags"],
+                        "evidence": pair_res["evidence"],
+                        "statutory_clause": pair_res["statutory_clause"],
+                        "weight": 3.5,
+                        "label": f"Collusion ({int(pair_res['confidence']*100)}%)"
+                    })
+
+    return {
+        "nodes": nodes,
+        "links": links,
+        "metrics": {
+            "total_nodes": len(nodes),
+            "total_links": len(links),
+            "collusion_edges_count": collusion_edges,
+            "tenders_count": len(tenders_map),
+            "bidders_count": sum(1 for n in nodes if n["type"] == "bidder"),
+            "fingerprints_count": sum(1 for n in nodes if n["type"] == "fingerprint"),
+            "pan_groups_count": sum(1 for n in nodes if n["type"] == "pan_group")
+        }
     }

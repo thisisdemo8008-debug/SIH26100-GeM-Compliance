@@ -13,7 +13,7 @@ from fastapi import Body, Depends, FastAPI, File, Form, HTTPException, Query, Re
 from fastapi.responses import JSONResponse, HTMLResponse, PlainTextResponse
 
 from . import database, security, prisma_client
-from . import extraction, forensics, verification, scoring, recommendations, eligibility, ai_summary, notices, cartel, scrapers, rpa_worker
+from . import extraction, forensics, verification, scoring, recommendations, eligibility, ai_summary, notices, cartel, scrapers, rpa_worker, auctions, copilot_rag, simulation, dsc_verification, dossier_printer
 
 log = logging.getLogger("gem.api")
 
@@ -50,7 +50,12 @@ async def lifespan(app: FastAPI):
 
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="ARCHON — GeM Bid Compliance Verification Platform",
+    version="2.0.0",
+    description="Autonomous Bid Compliance Verification, Forensic Document Auditing & Cartel Radar Engine",
+    lifespan=lifespan
+)
 
 
 @app.middleware("http")
@@ -149,7 +154,13 @@ SEED_BIDS_CATALOG = [
         "pan": "AAECB1234F",
         "cin": "U29100MH2011PTC221345",
         "udyam": "UDYAM-MH-03-0089231",
-        "tenderCategory": "goods-general",
+        "tenderCategory": "CPCL-2026-CAT-014",
+        "auction_id": "CPCL-2026-CAT-014",
+        "auction_title": "Supply of Hydroprocessing Catalyst & Technical Services",
+        "tenure_months": 24,
+        "tenure_label": "24 Months (2 Years)",
+        "tenure_period": "01-Jan-2024 to 31-Dec-2025",
+        "tenure_quote": 389000000,
         "claimedTurnover": 42000000,
         "claimedLocalContent": 62,
         "flags": ["ocr_low_confidence"],
@@ -164,6 +175,12 @@ SEED_BIDS_CATALOG = [
         "cin": "U28920UP2009PTC039981",
         "udyam": "UDYAM-UP-14-0071820",
         "tenderCategory": "goods-electronics",
+        "auction_id": "GEM-2026-IT-004521",
+        "auction_title": "National Supply & Managed Maintenance of Enterprise IT Hardware",
+        "tenure_months": 24,
+        "tenure_label": "24 Months (2 Years)",
+        "tenure_period": "15-Jun-2026 to 14-Jun-2028",
+        "tenure_quote": 48500000,
         "claimedTurnover": 31500000,
         "claimedLocalContent": 54,
         "flags": ["turnover_inflation", "lapsed_filing", "local_content_mismatch", "oem_authorization_invalid", "document_tamper_detected"],
@@ -178,6 +195,12 @@ SEED_BIDS_CATALOG = [
         "cin": "U51909MP2015PTC034521",
         "udyam": "UDYAM-MP-08-0055102",
         "tenderCategory": "works",
+        "auction_id": "GEM-2026-CONST-098",
+        "auction_title": "Civil Works — Minor Construction & Facility Modernization",
+        "tenure_months": 12,
+        "tenure_label": "12 Months (1 Year)",
+        "tenure_period": "01-Feb-2025 to 31-Jan-2026",
+        "tenure_quote": 9450000,
         "claimedTurnover": 18700000,
         "claimedLocalContent": 41,
         "flags": ["debarment_match", "lapsed_itr_filing"],
@@ -192,6 +215,12 @@ SEED_BIDS_CATALOG = [
         "cin": "U40106WB2018PTC228834",
         "udyam": "UDYAM-WB-11-0093347",
         "tenderCategory": "services",
+        "auction_id": "GEM-2026-SOLAR-055",
+        "auction_title": "Grid-Interactive Rooftop Solar PV & BESS Microgrid 5-Year Comprehensive O&M",
+        "tenure_months": 60,
+        "tenure_label": "60 Months (5 Years)",
+        "tenure_period": "01-Oct-2026 to 30-Sep-2031",
+        "tenure_quote": 218000000,
         "claimedTurnover": 9800000,
         "claimedLocalContent": 71,
         "flags": ["startup_status_unverified", "nsic_status_unverified", "document_authenticity_mismatch"],
@@ -206,6 +235,12 @@ SEED_BIDS_CATALOG = [
         "cin": "L27100TN2006PLC059871",
         "udyam": "UDYAM-TN-05-0124490",
         "tenderCategory": "CPCL-2026-VALV-089",
+        "auction_id": "CPCL-2026-VALV-089",
+        "auction_title": "Procurement of High-Pressure Forged Steel Refinery Valves & Flanges",
+        "tenure_months": 36,
+        "tenure_label": "36 Months (3 Years)",
+        "tenure_period": "01-May-2026 to 30-Apr-2029",
+        "tenure_quote": 148000000,
         "claimedTurnover": 162000000,
         "claimedLocalContent": 55,
         "flags": ["epfo_esic_noncompliant", "bis_dpiit_unverified"],
@@ -227,9 +262,18 @@ def bid_to_report(data: Any, bid_id: Optional[str] = None) -> Dict[str, Any]:
 
     bidder_name = data.get("company") or data.get("bidder_name") or data.get("entity_name") or "Bidder Entity"
     tender_id = data.get("tenderCategory") or data.get("tender_id") or "goods-general"
-    score_val = data.get("score") if data.get("score") is not None else data.get("compliance_score", 100)
     risk_val = data.get("risk") or data.get("risk_level") or "Low"
-    flags = data.get("flags") or []
+    flags = list(data.get("flags") or [])
+
+    raw_score = data.get("score") if data.get("score") is not None else data.get("compliance_score", 100)
+    if isinstance(raw_score, dict):
+        score_val = raw_score.get("total") or raw_score.get("score", 100)
+        if not flags and raw_score.get("flags"):
+            flags = list(raw_score.get("flags"))
+        if (not risk_val or risk_val == "Low") and raw_score.get("risk_level"):
+            risk_val = raw_score.get("risk_level")
+    else:
+        score_val = raw_score
 
     is_tampered = "document_tamper_detected" in flags or "editing_software_detected" in flags
     is_debarred = "debarment_match" in flags
@@ -238,7 +282,11 @@ def bid_to_report(data: Any, bid_id: Optional[str] = None) -> Dict[str, Any]:
         "bid_id": bid_id or data.get("id") or "BID-UNKNOWN",
         "bidder_name": bidder_name,
         "tender_id": tender_id,
-        "tender_title": tender_id,
+        "tender_title": data.get("auction_title") or tender_id,
+        "auction_id": data.get("auction_id") or tender_id,
+        "tenure_label": data.get("tenure_label") or data.get("tenureDuration") or "12 Months (1 Year)",
+        "tenure_period": data.get("tenure_period") or data.get("tenurePeriod") or "Standard Execution Window",
+        "tenure_quote": data.get("tenure_quote") or data.get("tenureQuote"),
         "score": {
             "total": score_val,
             "risk_level": risk_val.capitalize() if isinstance(risk_val, str) else "Low",
@@ -293,6 +341,11 @@ def adapt_bid_for_ui(row: dict) -> dict:
         "cin": (extraction.get("cin") if extraction else None) or None,
         "udyam": (extraction.get("udyam") if extraction else None) or None,
         "tenderCategory": (rpt.get("tender_id") if isinstance(rpt, dict) else row.get("tender_id")) or row.get("tender_id"),
+        "auctionId": rpt.get("auction_id") or rpt.get("tender_id") or row.get("tender_id"),
+        "auctionTitle": rpt.get("tender_title") or rpt.get("auction_title") or row.get("tender_id"),
+        "tenureDuration": rpt.get("tenure_label") or rpt.get("tenureDuration") or "12 Months (1 Year)",
+        "tenurePeriod": rpt.get("tenure_period") or rpt.get("tenurePeriod") or "Standard Execution Window",
+        "tenureQuote": rpt.get("tenure_quote") or rpt.get("tenureQuote") or row.get("tenure_quote"),
         "claimedTurnover": (extraction.get("declared_revenue") if extraction else None) or None,
         "claimedLocalContent": (extraction.get("declared_local_content") if extraction else None) or 0,
         "isReseller": False,
@@ -367,6 +420,32 @@ def api_bid(bid_id: str):
     adapted = adapt_bid_for_ui(row)
     adapted["report"] = row.get("report")
     return JSONResponse(adapted)
+
+
+@app.get("/api/auctions")
+def api_list_auctions(
+    status: Optional[str] = Query(None, description="Filter by status: ongoing, upcoming, ended, or all"),
+    category: Optional[str] = Query(None, description="Filter by category"),
+    tenure_months: Optional[int] = Query(None, description="Filter by tenure duration in months"),
+    search: Optional[str] = Query(None, description="Search query")
+):
+    """Retrieve filtered list of GeM and CPCL Tenure Auctions along with pipeline KPI summaries."""
+    res = auctions.list_auctions(
+        status=status,
+        category=category,
+        tenure_months=tenure_months,
+        search=search
+    )
+    return JSONResponse(res)
+
+
+@app.get("/api/auctions/{auction_id}")
+def api_get_auction(auction_id: str):
+    """Retrieve details, tenure deliverables, milestones and criteria for a specific tenure auction."""
+    item = auctions.get_auction(auction_id)
+    if not item:
+        raise HTTPException(status_code=404, detail=f"Tenure Auction '{auction_id}' not found")
+    return JSONResponse(item)
 
 
 @app.post("/api/bidders/register", dependencies=[Depends(rate_limit_writes)])
@@ -665,6 +744,7 @@ def api_bid_evidence_report(bid_id: str):
         "forensics": report.get("forensics", {}),
         "eligibility": report.get("eligibility", {}),
         "scoring_breakdown": report.get("score", {}),
+        "dsc_verification": report.get("dsc_verification") or dsc_verification.verify_bid_dsc(row),
         "audit_trail": [{
             "seq": a.get("seq"),
             "timestamp": a.get("timestamp"),
@@ -730,7 +810,8 @@ def api_export_bid_dossier(bid_id: str):
             "registry_results": report.get("registry_results", []),
             "forensics": report.get("forensics", {}),
             "eligibility": report.get("eligibility", {}),
-            "scoring_breakdown": report.get("score", {})
+            "scoring_breakdown": report.get("score", {}),
+            "dsc_verification": report.get("dsc_verification") or dsc_verification.verify_bid_dsc(row)
         },
         "audit_chain": {
             "chain_length": len(bid_audit),
@@ -755,6 +836,39 @@ def api_export_bid_dossier(bid_id: str):
         media_type="application/json",
         headers={"Content-Disposition": f"attachment; filename=GEM-DOSSIER-{bid_id.upper()}.json"}
     )
+
+
+@app.get("/api/bids/{bid_id}/dossier/print", response_class=HTMLResponse)
+def api_print_bid_dossier(bid_id: str, request: Request):
+    """Generates an official, printable (A4) statutory compliance dossier with live verification QR code."""
+    row = None
+    bid_audit = []
+    try:
+        with database.get_conn(read_only=True) as conn:
+            row = database.fetch_bid(conn, bid_id)
+            audit_rows = database.fetch_audit(conn)
+            bid_audit = [a for a in audit_rows if a.get("bid_id") == bid_id]
+    except Exception as e:
+        log.warning("Database fetch for dossier print failed: %s", e)
+
+    if not row:
+        rep = _find_or_synthesize_report(bid_id)
+        row = {
+            "id": bid_id,
+            "bid_id": bid_id,
+            "bidder_name": rep.get("bidder_name"),
+            "tender_id": rep.get("tender_id"),
+            "filename": f"{bid_id}_tender_docs.pdf",
+            "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "uploaded_at": time.time() - 3600,
+            "compliance_score": rep.get("score", {}).get("total", 100),
+            "risk_level": rep.get("score", {}).get("risk_level", "Low"),
+            "report": rep
+        }
+
+    base_url = str(request.base_url).rstrip("/")
+    html_content = dossier_printer.render_printable_dossier_html(bid_id, row, bid_audit, base_url=base_url)
+    return HTMLResponse(content=html_content)
 
 
 @app.get("/api/verify/certificate/{cert_id}")
@@ -806,22 +920,19 @@ def api_verify_live_gstin(gstin: str = Query(..., description="15-character Indi
 
 
 @app.get("/api/verify/rpa-status")
-def api_verify_rpa_status():
+def api_verify_rpa_status(gstin: Optional[str] = Query(None), cin: Optional[str] = Query(None), company: Optional[str] = Query(None)):
     """Returns status and configuration of the RPA / Browser Automation agent for government portals."""
-    return JSONResponse({
-        "status": "OPERATIONAL",
-        "rpa_engine": "Headless Chromium Automation & DOM Scraper",
-        "supported_workflows": [
-            "GSTN Taxpayer Public Verification (services.gst.gov.in)",
-            "MCA21 Master Data Verification (mca.gov.in)",
-            "EPFO / ESIC Establishment Compliance Check"
-        ],
-        "hybrid_mode": "Active (Live Scraper + Gateway API + RPA Agent)"
-    })
+    status = rpa_worker.get_status()
+    if gstin:
+        status["sample_run_gstin"] = rpa_worker.execute_gstn_rpa_flow(gstin)
+    if cin or company:
+        status["sample_run_mca21"] = rpa_worker.execute_mca21_rpa_flow(cin or "", company_name=company)
+    return JSONResponse(status)
 
 
 def _get_all_bids_safe() -> List[Dict[str, Any]]:
-    """Fetches all bids from PostgreSQL safely, falling back to seed catalog if database drops."""
+    """Fetches all bids from PostgreSQL safely, falling back to seed catalog if database drops,
+    and merges active synthetic bids from simulation mode."""
     rows = []
     try:
         with database.get_conn(read_only=True) as conn:
@@ -839,6 +950,15 @@ def _get_all_bids_safe() -> List[Dict[str, Any]]:
             "report": bid_to_report(s, bid_id=s["id"]),
             "uploaded_at": time.time() - 3600
         } for s in SEED_BIDS_CATALOG]
+
+    # Merge active simulated attack bids seamlessly
+    sim_bids = simulation.get_simulated_bids()
+    if sim_bids:
+        existing_ids = {r.get("id") for r in rows}
+        for sb in sim_bids:
+            if sb.get("id") not in existing_ids:
+                rows.append(sb)
+
     return rows
 
 
@@ -858,6 +978,137 @@ def api_tender_cartel_radar(tender_id: str):
 
     res = cartel.analyze_tender_cartel(tender_id, tender_bids)
     return JSONResponse(res)
+
+
+@app.get("/api/tenders/{tender_id}/comparison-matrix")
+def api_tender_comparison_matrix(tender_id: str):
+    """Generates a Comparative Statement of Bids (CSB) and Multi-Bid Evaluation Matrix
+    under GFR 2017 Rules 149, 153 and DPIIT Public Procurement (Preference to Make in India) Order.
+    """
+    all_bids = _get_all_bids_safe()
+    tender_bids = []
+    for b in all_bids:
+        rep = b.get("report") or {}
+        tid = b.get("tender_id") or rep.get("tender_id") or b.get("tenderCategory")
+        if tid == tender_id or tender_id.lower() == "all":
+            b_norm = dict(b)
+            b_norm["tender_id"] = tid
+            b_norm["bidder_name"] = b.get("bidder_name") or b.get("company") or rep.get("bidder_name")
+            tender_bids.append(b_norm)
+
+    # Find tender metadata
+    auc = auctions.get_auction(tender_id)
+    tender_title = auc.get("title") if auc else ((tender_bids[0].get("report") or {}).get("tender_title") if tender_bids else tender_id)
+
+    if not tender_bids:
+        return JSONResponse({
+            "tender_id": tender_id,
+            "tender_title": tender_title,
+            "total_bids": 0,
+            "matrix": [],
+            "evaluation": {"status": "NO_BIDS_SUBMITTED"}
+        })
+
+    # Scan for cartels among this tender's bids
+    cartel_analysis = cartel.analyze_tender_cartel(tender_id, tender_bids)
+    collusion_rings = cartel_analysis.get("collusion_rings", [])
+    cartel_bids_set = set()
+    for ring in collusion_rings:
+        for m in ring.get("members", []):
+            cartel_bids_set.add(m.get("bid_id"))
+
+    matrix = []
+    for b in tender_bids:
+        bid_id = str(b.get("id"))
+        rep = b.get("report") or {}
+        ext = rep.get("extraction") or {}
+        score_obj = rep.get("score") if isinstance(rep.get("score"), dict) else {}
+        total_score = b.get("compliance_score") if b.get("compliance_score") is not None else score_obj.get("total", 0.0)
+        risk_lvl = b.get("risk_level") or score_obj.get("risk_level", "Unknown")
+        flags = list(b.get("flags") or rep.get("flags") or score_obj.get("flags", []))
+
+        # Financial quote (look for tenure_quote or declared_revenue)
+        quote = b.get("tenure_quote") or b.get("claimedTurnover") or ext.get("declared_revenue") or 48500000.0
+
+        # Local content & Make in India
+        lc_pct = b.get("claimedLocalContent") or ext.get("declared_local_content") or 0.0
+        mii_class = "Class-I Local" if lc_pct >= 50 else ("Class-II Local" if lc_pct >= 20 else "Non-Local")
+
+        # MSME & Startup
+        is_msme = bool(b.get("udyam") or ext.get("udyam"))
+        is_startup = bool(b.get("claims_startup_status") or ext.get("claims_startup_status"))
+
+        # DSC
+        dsc_status = (rep.get("dsc_verification") or {}).get("status") or "VERIFIED_VALID"
+
+        # Cartel flag
+        has_cartel_link = bid_id in cartel_bids_set
+
+        # Technical compliance
+        is_technically_qualified = risk_lvl in ("Low", "Medium") and float(total_score) >= 60.0 and not has_cartel_link
+
+        matrix.append({
+            "bid_id": bid_id,
+            "bidder_name": b.get("bidder_name"),
+            "financial_quote": quote,
+            "financial_quote_formatted": f"₹ {quote:,.2f}",
+            "compliance_score": round(float(total_score), 1),
+            "risk_level": risk_lvl,
+            "technically_qualified": is_technically_qualified,
+            "local_content_pct": lc_pct,
+            "make_in_india_class": mii_class,
+            "msme_status": is_msme,
+            "startup_status": is_startup,
+            "dsc_status": dsc_status,
+            "cartel_flag": has_cartel_link,
+            "flags": flags
+        })
+
+    # Sort bids by financial quote ascending to determine L1, L2, L3
+    matrix.sort(key=lambda x: x["financial_quote"])
+    for idx, item in enumerate(matrix):
+        item["quote_rank"] = f"L{idx+1}"
+
+    qualified_bids = [m for m in matrix if m["technically_qualified"]]
+    for idx, item in enumerate(qualified_bids):
+        item["qualified_rank"] = f"L{idx+1}"
+
+    l1_bid = qualified_bids[0] if qualified_bids else (matrix[0] if matrix else None)
+
+    # GFR 153 Purchase Preference Analysis (Make in India 20% & MSE 15%)
+    purchase_pref_notice = None
+    recommended_awardee = l1_bid["bidder_name"] if l1_bid else None
+
+    if l1_bid:
+        if l1_bid["make_in_india_class"] != "Class-I Local":
+            l1_price = l1_bid["financial_quote"]
+            pref_threshold = l1_price * 1.20
+            class1_eligible = [m for m in qualified_bids if m["make_in_india_class"] == "Class-I Local" and m["financial_quote"] <= pref_threshold]
+            if class1_eligible:
+                best_class1 = class1_eligible[0]
+                purchase_pref_notice = f"DPIIT PPP-MII Mandate: L1 bidder '{l1_bid['bidder_name']}' is {l1_bid['make_in_india_class']}. Class-I local bidder '{best_class1['bidder_name']}' (quoted {best_class1['financial_quote_formatted']}) is within the 20% purchase preference margin and must be invited to match L1 quote per GFR Rule 153."
+                recommended_awardee = f"{best_class1['bidder_name']} (Subject to L1 Price Match)"
+        elif not l1_bid["msme_status"]:
+            l1_price = l1_bid["financial_quote"]
+            mse_threshold = l1_price * 1.15
+            mse_eligible = [m for m in qualified_bids if m["msme_status"] and m["financial_quote"] <= mse_threshold]
+            if mse_eligible:
+                purchase_pref_notice = f"MSE Procurement Policy 2012: MSE bidder '{mse_eligible[0]['bidder_name']}' is within L1 + 15% price band and is eligible for 25% purchase order allocation upon matching L1 price."
+
+    return JSONResponse({
+        "tender_id": tender_id,
+        "tender_title": tender_title,
+        "total_bids": len(matrix),
+        "technically_qualified_count": len(qualified_bids),
+        "disqualified_count": len(matrix) - len(qualified_bids),
+        "l1_bidder": l1_bid["bidder_name"] if l1_bid else None,
+        "l1_quote_formatted": l1_bid["financial_quote_formatted"] if l1_bid else None,
+        "recommended_awardee": recommended_awardee,
+        "purchase_preference_clause": purchase_pref_notice,
+        "cartel_rings_detected": len(collusion_rings),
+        "matrix": matrix,
+        "statutory_framework": "GFR 2017 Rules 149 & 153, DPIIT Order P-45021/2/2017-PP, and Competition Act 2002"
+    })
 
 
 @app.get("/api/bids/{bid_id}/collusion-risk")
@@ -911,6 +1162,226 @@ def api_cartel_global_overview():
     })
 
 
+@app.get("/api/cartel/network-graph")
+def api_cartel_network_graph(tender_id: Optional[str] = Query(None)):
+    """Returns the multi-entity force-directed network graph across all bids,
+    tenders, shared document fingerprints, and corporate PAN roots for D3.js visualization."""
+    all_bids = _get_all_bids_safe()
+    normalized_bids = []
+    for b in all_bids:
+        rep = b.get("report") or {}
+        b_norm = dict(b)
+        b_norm["tender_id"] = b.get("tender_id") or rep.get("tender_id")
+        b_norm["bidder_name"] = b.get("bidder_name") or rep.get("bidder_name")
+        normalized_bids.append(b_norm)
+
+    graph_data = cartel.build_global_cartel_network(normalized_bids, filter_tender_id=tender_id)
+    return JSONResponse(graph_data)
+
+
+@app.post("/api/copilot/chat")
+def api_copilot_chat(body: dict = Body(...)):
+    """Multimodal RAG Copilot endpoint: Answers natural language questions on a specific
+    bid dossier, financial standing, OEM authorization, and Section 3(3) cartel flags with citations."""
+    query = (body.get("query") or "").strip()
+    if not query:
+        raise HTTPException(status_code=400, detail="query required")
+
+    bid_id = body.get("bid_id")
+    conv_history = body.get("conversation_history") or []
+
+    target_bid = None
+    if bid_id:
+        try:
+            with database.get_conn(read_only=True) as conn:
+                target_bid = database.fetch_bid(conn, bid_id)
+        except Exception:
+            target_bid = None
+
+        if not target_bid:
+            all_bids = _get_all_bids_safe()
+            target_bid = next((b for b in all_bids if b.get("id") == bid_id), None)
+
+    if not target_bid:
+        all_bids = _get_all_bids_safe()
+        if all_bids:
+            target_bid = all_bids[0]
+        else:
+            target_bid = {
+                "id": bid_id or "BID-2026-001",
+                "company": "Vantara Industrial Systems Ltd",
+                "tenderCategory": body.get("tender_id") or "GEM-2026-IT-004521",
+                "auctionTitle": "Supply of IT Hardware and Peripherals",
+                "claimedTurnover": 85000000.0,
+                "claimedLocalContent": 65.0,
+                "gstin": "07AAACV1234F1ZR",
+                "pan": "AAACV1234F",
+                "udyam": "UDYAM-DL-01-0045218",
+                "score": 88,
+                "risk_level": "Low"
+            }
+
+    result = copilot_rag.ask_copilot(target_bid, query, conv_history)
+    return JSONResponse(result)
+
+
+@app.get("/api/copilot/quick-prompts")
+def api_copilot_quick_prompts(bid_id: Optional[str] = Query(None)):
+    """Returns dynamic 1-click prompt chips tailored to the active bid's risk posture."""
+    target_bid = None
+    if bid_id:
+        try:
+            with database.get_conn(read_only=True) as conn:
+                target_bid = database.fetch_bid(conn, bid_id)
+        except Exception:
+            target_bid = None
+
+        if not target_bid:
+            all_bids = _get_all_bids_safe()
+            target_bid = next((b for b in all_bids if b.get("id") == bid_id), None)
+
+    if not target_bid:
+        all_bids = _get_all_bids_safe()
+        target_bid = all_bids[0] if all_bids else {"id": "BID-DEFAULT", "risk_level": "Low"}
+
+    prompts = copilot_rag.generate_quick_prompts(target_bid)
+    return JSONResponse({
+        "bid_id": target_bid.get("id"),
+        "company": target_bid.get("company") or target_bid.get("bidder_name"),
+        "prompts": prompts
+    })
+
+
+@app.post("/api/simulation/inject-attack")
+def api_simulation_inject_attack(payload: Optional[dict] = Body(None)):
+    """Triggers live injection of 3 synthetic bids with colliding SHA-256 digests
+    and corporate syndicate lineage to demonstrate Section 3(3) Cartel detection in real-time."""
+    tender_id = (payload or {}).get("tender_id")
+    result = simulation.inject_collusion_attack(tender_id=tender_id)
+    return JSONResponse(result)
+
+
+@app.post("/api/simulation/reset")
+def api_simulation_reset():
+    """Clears all synthetic bids and resets the platform topology back to baseline."""
+    result = simulation.reset_simulation()
+    return JSONResponse(result)
+
+
+@app.get("/api/simulation/status")
+def api_simulation_status():
+    """Returns active simulation status, injected bids count, and attack telemetry."""
+    bids = simulation.get_simulated_bids()
+    return JSONResponse({
+        "active": len(bids) > 0,
+        "injected_count": len(bids),
+        "bids": [{"id": b["id"], "name": b.get("bidder_name"), "role": b.get("role")} for b in bids]
+    })
+
+
+@app.get("/api/bids/{bid_id}/dsc")
+def api_bid_dsc_details(bid_id: str):
+    """Returns True Class-3 DSC Signature Cryptographic Verification result for a bid dossier.
+    Validates X.509 v3 certificate, CCA Root CA chain, ByteRange integrity, and statutory Evidence Act compliance."""
+    row = None
+    try:
+        with database.get_conn(read_only=True) as conn:
+            row = database.fetch_bid(conn, bid_id)
+    except Exception as e:
+        log.warning("Database fetch for DSC failed: %s", e)
+
+    if not row:
+        all_bids = _get_all_bids_safe()
+        row = next((b for b in all_bids if b.get("id") == bid_id), None)
+
+    if not row:
+        rep = _find_or_synthesize_report(bid_id)
+        row = {
+            "id": bid_id,
+            "bidder_name": rep.get("bidder_name") or "Bidder",
+            "company": rep.get("bidder_name") or "Bidder",
+            "tender_id": rep.get("tender_id"),
+            "report": rep
+        }
+
+    report = row.get("report") or {}
+    if "dsc_verification" in report:
+        return JSONResponse(report["dsc_verification"])
+
+    # Compute deterministic DSC verification
+    target_bid = adapt_bid_for_ui(row) if "company" not in row else row
+    dsc_result = dsc_verification.verify_bid_dsc(target_bid)
+    return JSONResponse(dsc_result)
+
+
+@app.post("/api/dsc/verify")
+async def api_dsc_verify(request: Request):
+    """Verifies Class-3 DSC cryptographic signature directly from uploaded PDF bytes or base64 data."""
+    pdf_bytes = None
+    bid_info = {}
+    content_type = request.headers.get("content-type", "")
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        uploaded_file = form.get("file")
+        if uploaded_file and hasattr(uploaded_file, "read"):
+            cfg = security.get_config()
+            pdf_bytes = await uploaded_file.read()
+            if len(pdf_bytes) > cfg.max_upload_bytes:
+                raise HTTPException(status_code=413, detail="File too large")
+            bid_info = {"id": "UPLOADED", "bidder_name": getattr(uploaded_file, "filename", "document.pdf")}
+    else:
+        try:
+            payload = await request.json()
+        except Exception:
+            payload = {}
+        b64_data = payload.get("pdf_base64")
+        if b64_data:
+            import base64
+            try:
+                pdf_bytes = base64.b64decode(b64_data)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Invalid base64 payload")
+        bid_info = payload.get("bid_info") or {}
+        if not pdf_bytes and "bid_id" in payload:
+            return api_bid_dsc_details(payload["bid_id"])
+
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="PDF file or pdf_base64 or bid_id required")
+
+    signatures = dsc_verification.extract_pdf_digital_signatures(pdf_bytes)
+    result = dsc_verification.verify_bid_dsc(bid_info, pdf_bytes=pdf_bytes)
+    return JSONResponse({
+        "ok": True,
+        "signatures_found": len(signatures),
+        "dsc_verification": result
+    })
+
+
+@app.post("/api/dsc/generate-demo")
+def api_dsc_generate_demo(payload: Optional[dict] = Body(None)):
+    """Generates an authentic or tampered Class-3 DSC digitally signed PDF for live officer/judge demonstration."""
+    import base64
+    body = payload or {}
+    tamper = bool(body.get("tamper", False))
+    bid_info = {
+        "bidder_name": body.get("bidder_name") or "Tata Consultancy & Defense Systems Ltd",
+        "tender_id": body.get("tender_id") or "GEM/2026/B/882194",
+        "gstin": body.get("gstin") or "27AAACT1234F1ZR",
+        "turnover": body.get("turnover") or "INR 450.00 Cr",
+        "director_name": body.get("director_name") or "Rajesh V. Sharma (Authorized Signatory)",
+        "director_pan": body.get("director_pan") or "ABRPS1234D",
+        "ca_name": body.get("ca_name") or "e-Mudhra Sub-CA Class 3 2026"
+    }
+    pdf_bytes = dsc_verification.generate_demo_dsc_signed_pdf(bid_info, tamper=tamper)
+    verification_res = dsc_verification.verify_bid_dsc(bid_info, pdf_bytes=pdf_bytes)
+    return JSONResponse({
+        "ok": True,
+        "tampered": tamper,
+        "pdf_base64": base64.b64encode(pdf_bytes).decode("ascii"),
+        "filename": f"DEMO_DSC_{'TAMPERED' if tamper else 'SIGNED'}.pdf",
+        "verification": verification_res
+    })
 
 
 @app.post("/api/bids/{bid_id}/decision", dependencies=[Depends(rate_limit_writes)])
@@ -1102,6 +1573,30 @@ def api_verify(file: UploadFile = File(...), bidder_name: str = Form(None), tend
         if eligibility_res.get('eligible') is False:
             flags.append('tender_ineligible')
 
+        # 6b. True Class-3 DSC Signature Cryptographic Verification
+        try:
+            dsc_result = dsc_verification.verify_bid_dsc(
+                {'id': None, 'company': bidder_name or file.filename or 'Unknown', 'tender_id': tender_id},
+                pdf_bytes=data
+            )
+        except Exception as e:
+            log.warning("DSC verification skipped or failed: %s", e)
+            dsc_result = {
+                'status': 'UNVERIFIED',
+                'summary': f'DSC verification error: {e}',
+                'flags': ['DSC_CHECK_ERROR'],
+                'legal_admissibility': {'admissible_under_it_act': False}
+            }
+
+        if dsc_result.get('status') == 'TAMPERED':
+            if 'document_tamper_detected' not in flags:
+                flags.append('document_tamper_detected')
+            flags.append('dsc_signature_tampered')
+        elif dsc_result.get('status') == 'EXPIRED':
+            flags.append('dsc_certificate_expired')
+        elif dsc_result.get('status') == 'INVALID':
+            flags.append('dsc_signature_invalid')
+
         # 7. Deduplicate flags
         flags = list(dict.fromkeys(flags))
 
@@ -1115,6 +1610,7 @@ def api_verify(file: UploadFile = File(...), bidder_name: str = Form(None), tend
             'tender_id': tender_id or 'GEM-UNKNOWN',
             'tender_title': eligibility_res.get('tender_title') or '',
             'filename': file.filename,
+            'dsc_verification': dsc_result,
             'extraction': {
                 'page_count': forens.get('page_count'),
                 'ocr_pages_used': 1 if extracted.get('ocr_used') else 0,
@@ -1193,6 +1689,12 @@ def api_verify(file: UploadFile = File(...), bidder_name: str = Form(None), tend
                 database.append_audit(conn_w, 'FORENSIC_ENGINE', 'FORENSIC_SCAN_COMPLETE', bid_id, report['forensics'], commit=False)
                 database.append_audit(conn_w, 'GOVT_REGISTRY_GATEWAY', 'REGISTRY_LOOKUPS_COMPLETE', bid_id, { 'results': registry_results }, commit=False)
                 database.append_audit(conn_w, 'ELIGIBILITY_ENGINE', 'ELIGIBILITY_CHECK_COMPLETE', bid_id, eligibility_res, commit=False)
+                database.append_audit(conn_w, 'DSC_CRYPTOGRAPHIC_ENGINE', 'DSC_SIGNATURE_VERIFIED', bid_id, {
+                    'status': dsc_result.get('status'),
+                    'ca_verified': dsc_result.get('ca_verified'),
+                    'byte_integrity': dsc_result.get('byte_integrity'),
+                    'signatory': ((dsc_result.get('signatures') or [{}])[0].get('subject') or {}).get('common_name')
+                }, commit=False)
                 if duplicate_bids:
                     database.append_audit(conn_w, 'FORENSIC_ENGINE', 'RECYCLED_DOCUMENT_DETECTED', bid_id, { 'prior_submissions': duplicate_bids }, commit=False)
                 if 'debarment_match' in flags:
@@ -1293,6 +1795,20 @@ def adapter_js():
 })();
 '''
         return Response(content=code, media_type='application/javascript')
+
+
+@app.get("/d3.v7.min.js", include_in_schema=False)
+def serve_d3():
+    root_dir = Path(__file__).resolve().parents[1]
+    candidates = [
+        Path(__file__).resolve().parent / "d3.v7.min.js",
+        root_dir / "d3.v7.min.js",
+        Path("d3.v7.min.js").resolve(),
+    ]
+    path = next((c for c in candidates if c.exists()), None)
+    if path:
+        return Response(content=path.read_text(encoding="utf-8"), media_type="application/javascript")
+    return Response(content="/* d3 fallback */", media_type="application/javascript")
 
 
 @app.get("/")

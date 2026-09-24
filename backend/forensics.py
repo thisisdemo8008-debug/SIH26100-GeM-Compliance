@@ -17,6 +17,7 @@ SUSPICIOUS_SOFTWARE = [
 def analyze_pdf_forensics(b: bytes) -> Dict[str, Any]:
     res: Dict[str, Any] = {}
     res['sha256'] = sha256_bytes(b)
+    res['file_sha256'] = res['sha256']
     flags = []
     flag_codes = []
     

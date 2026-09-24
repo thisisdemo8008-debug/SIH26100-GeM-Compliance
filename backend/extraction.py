@@ -170,6 +170,19 @@ def extract_fields(text: str) -> Dict[str, Any]:
     if 'oem' in text.lower() or 'original equipment manufacturer' in text.lower():
         out['has_oem_letter_mention'] = True
 
+    # ICAI CA-UDIN (18-digit alphanumeric)
+    m = re.search(r"(?:UDIN\s*[:\-]?\s*|\b)([0-9]{2}[0-9]{6}[A-Za-z0-9]{10})\b", text)
+    if m:
+        out['udin'] = m.group(1).upper()
+    else:
+        out['udin'] = None
+
+    # GFR Rule 144(xi) Land Border Declaration
+    out['land_border_declaration'] = bool(re.search(r"land\s*border|rule\s*144\s*\(\s*xi\s*\)|order\s*p-?45021", text, re.IGNORECASE))
+
+    # GFR Rule 170 EMD Exemption Claim
+    out['emd_exemption_claimed'] = bool(re.search(r"emd\s*exemption|earnest\s*money\s*(?:deposit)?\s*exemption|rule\s*170", text, re.IGNORECASE))
+
     return out
 
 
